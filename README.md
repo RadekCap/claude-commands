@@ -138,6 +138,28 @@ If you need commands specific to one project, you have two options:
 
 ---
 
+## Global CLAUDE.md (Communication Preferences)
+
+This repo includes a `CLAUDE.md` file with personal preferences that apply across all Claude Code sessions.
+
+### Setup on Each Computer
+
+```bash
+# In any project with the submodule, update it:
+git submodule update --remote
+
+# Then create the symlink (one-time per computer):
+ln -sf /path/to/any-project/.claude/commands/CLAUDE.md ~/.claude/CLAUDE.md
+```
+
+### How It Works
+
+- Your communication preferences are now in the shared `claude-commands` repo
+- The symlink makes them global for all Claude Code sessions on this computer
+- When you `git submodule update --remote` in any project, you get the latest preferences
+
+---
+
 ## Troubleshooting
 
 ### Commands not showing up after clone
