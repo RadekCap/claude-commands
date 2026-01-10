@@ -178,3 +178,46 @@ git submodule update
 ### Detached HEAD in submodule
 
 This is normal for submodules. The parent repo tracks a specific commit, not a branch.
+
+---
+
+## MCP Servers Configuration
+
+This repo includes `mcp_servers.json` with pre-configured MCP (Model Context Protocol) servers.
+
+### Setup on Each Computer
+
+```bash
+# Copy to Claude config directory
+cp mcp_servers.json ~/.claude/mcp_servers.json
+
+# Restart Claude Code to activate
+```
+
+### Included Servers
+
+| Server | Purpose | Tokens Required |
+|--------|---------|-----------------|
+| Kubernetes | kubectl operations, cluster inspection | None (uses ~/.kube/config) |
+
+### Adding More Servers
+
+Edit `~/.claude/mcp_servers.json` to add servers like GitHub, Brave Search, etc:
+
+```json
+{
+  "mcpServers": {
+    "kubernetes": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-kubernetes"]
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "<your-token>"
+      }
+    }
+  }
+}
+```
