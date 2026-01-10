@@ -199,6 +199,7 @@ cp mcp_servers.json ~/.claude/mcp_servers.json
 | Server | Purpose | Tokens Required |
 |--------|---------|-----------------|
 | Kubernetes | kubectl operations, cluster inspection | None (uses ~/.kube/config) |
+| Azure | Azure CLI, resource groups, storage, databases | None (uses `az login`) |
 
 ### Adding More Servers
 
