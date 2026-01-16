@@ -9,11 +9,77 @@ Shared Claude Code slash commands that work across all repositories.
 | `/sync-main` | Sync local main branch with remote and optionally create a new feature branch |
 | `/cleanup` | Cleanup local git repository by updating main and removing all other branches |
 | `/implement-issue <number>` | Analyze a GitHub issue and create a pull request that implements the fix |
+| `/prepare-worktree <number>` | Create a git worktree for implementing a GitHub issue in isolation |
+| `/close-worktree <number>` | Clean up a git worktree after the PR has been merged |
 | `/copilot-review <pr-number>` | Process GitHub Copilot code review findings for a PR |
+| `/context` | Show current session context (directory, branch, todos) for quick orientation |
+
+## Context-Switching Tools
+
+Tools to help when working with multiple Claude instances in parallel:
+
+| File | Purpose |
+|------|---------|
+| `statusline.sh` | Status line showing `[Model] dir \| branch \| $cost` |
+| `hooks/on-resume.sh` | Shows context automatically when resuming a session |
 
 ## Setup
 
-### Option 1: Fresh Setup (no existing commands)
+### Option 0: Global Setup (Recommended for Personal Use)
+
+Use this to make commands available in ALL repos on your machine without submodules.
+
+```bash
+# Clone to a known location
+git clone git@github.com:RadekCap/claude-commands.git ~/git/claude-commands
+
+# Remove existing ~/.claude/commands if it exists
+rm -rf ~/.claude/commands
+
+# Symlink commands
+ln -s ~/git/claude-commands ~/.claude/commands
+
+# Copy hooks and statusline to ~/.claude/
+mkdir -p ~/.claude/hooks
+cp ~/git/claude-commands/hooks/* ~/.claude/hooks/
+cp ~/git/claude-commands/statusline.sh ~/.claude/
+
+# Make scripts executable
+chmod +x ~/.claude/statusline.sh ~/.claude/hooks/*.sh
+```
+
+Add to `~/.claude/settings.json`:
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/on-resume.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Benefits:**
+- Commands work in every repo without adding submodules
+- Status line shows context at bottom of terminal
+- Session resume shows where you left off
+- Update with `cd ~/git/claude-commands && git pull`
+
+---
+
+### Option 1: Per-Repo Submodule (Fresh Setup)
 
 Use this if your repo doesn't have `.claude/commands/` yet.
 
