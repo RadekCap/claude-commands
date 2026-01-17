@@ -69,12 +69,19 @@ Create a git worktree for a GitHub issue, allowing you to implement the fix in a
    - This creates the worktree AND the branch in one command
    - Branch is based on latest origin/main
 
-8. **Copy command to clipboard**
+8. **Initialize submodules in the worktree**
+   ```bash
+   git -C <worktree-path> submodule update --init
+   ```
+   - Worktrees don't automatically initialize submodules
+   - This ensures `.claude/commands` and other submodules are available
+
+9. **Copy command to clipboard**
    - Linux (X11): `echo "cd <full-worktree-path> && claude" | xclip -selection clipboard`
    - Linux (Wayland): `echo "cd <full-worktree-path> && claude" | wl-copy`
    - macOS: `echo "cd <full-worktree-path> && claude" | pbcopy`
 
-9. **Display next steps**
+10. **Display next steps**
    Print clear instructions:
    ```
    ================================================
