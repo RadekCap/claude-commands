@@ -1,32 +1,51 @@
 ---
-description: Analyze a GitHub issue and create a pull request that implements the fix
+description: Analyze a GitHub issue or JIRA ticket and create a pull request that implements the fix
 ---
 
 # Implement Issue
 
-Automatically analyze a GitHub issue, implement the required changes, and create a pull request with the fix.
+Automatically analyze a GitHub issue or JIRA ticket, implement the required changes, and create a pull request with the fix.
 
 ## Usage
 
 ```
-/implement-issue <issue-number>
+/implement-issue <issue-number-or-jira-key>
 ```
 
-**Example**: `/implement-issue 72`
+**Examples**:
+- `/implement-issue 72` (GitHub issue)
+- `/implement-issue ACM-12345` (JIRA ticket)
 
 ## Workflow
 
-1. **Validate issue number argument**
-   - If no issue number provided, prompt user: "Please provide an issue number: /implement-issue <number>"
-   - If issue number is not a valid integer, show error and exit
+1. **Validate input and detect type**
+   - If no argument provided, prompt user: "Please provide a GitHub issue number or JIRA key: /implement-issue <number-or-key>"
+   - Detect input type:
+     - **GitHub issue**: input is a plain integer (e.g., `72`)
+     - **JIRA ticket**: input matches pattern `[A-Z]+-[0-9]+` (e.g., `ACM-12345`, `OCPBUGS-999`)
+   - If input matches neither pattern, show error and exit
 
-2. **Fetch issue details from GitHub**
-   ```bash
-   gh issue view <issue-number>
-   ```
-   - If issue doesn't exist, show error and exit
-   - If issue is closed, ask user if they still want to proceed
-   - Display issue title, description, and labels for context
+2a. **[GitHub] Fetch issue details from GitHub**
+    - Only when input is a GitHub issue number
+    ```bash
+    gh issue view <issue-number>
+    ```
+    - If issue doesn't exist, show error and exit
+    - If issue is closed, ask user if they still want to proceed
+    - Display issue title, description, and labels for context
+
+2b. **[JIRA] Fetch ticket details from JIRA**
+    - Only when input is a JIRA key
+    - Read `credentials.json` from the repo root for the Bearer token (field: `jira.token`)
+    - Fetch ticket details:
+      ```bash
+      TOKEN=$(cat credentials.json | jq -r '.jira.token')
+      curl -s -H "Authorization: Bearer $TOKEN" \
+        "https://issues.redhat.com/rest/api/2/issue/$KEY?fields=summary,description,status,issuetype,priority,labels,components"
+      ```
+    - If credentials.json is missing or token is empty, show error: "Missing JIRA credentials. Ensure credentials.json exists at repo root with jira.token set."
+    - If fetch fails (non-200 response), show error and exit
+    - Display ticket summary, description, status, type, and priority for context
 
 3. **Analyze the issue**
    - Read the issue description carefully
@@ -64,8 +83,8 @@ Automatically analyze a GitHub issue, implement the required changes, and create
 
 6. **Create feature branch**
    - Generate branch name from issue:
-     - Format: `fix-issue-<number>-<brief-description>`
-     - Example: `fix-issue-72-add-logging-function`
+     - **GitHub**: Format: `fix-issue-<number>-<brief-description>` (e.g., `fix-issue-72-add-logging-function`)
+     - **JIRA**: Format: `<JIRA-KEY>-<brief-description>` (e.g., `ACM-12345-fix-auth-timeout`). Keep the JIRA key as-is (uppercase), lowercase the description part.
      - Keep description under 50 chars, use kebab-case
    - Create and checkout branch:
      ```bash
@@ -110,18 +129,31 @@ Automatically analyze a GitHub issue, implement the required changes, and create
     - Check CLAUDE.md for formatting guidelines
 
 11. **Commit changes**
-    - Create descriptive commit message following this format:
-      ```
-      <Brief summary> (fixes #<issue-number>)
+    - Create descriptive commit message:
+      - **GitHub** format:
+        ```
+        <Brief summary> (fixes #<issue-number>)
 
-      <Detailed description of what changed and why>
+        <Detailed description of what changed and why>
 
-      Fixes #<issue-number>
+        Fixes #<issue-number>
 
-      Generated with [Claude Code](https://claude.com/claude-code)
+        Generated with [Claude Code](https://claude.com/claude-code)
 
-      Co-Authored-By: Claude <noreply@anthropic.com>
-      ```
+        Co-Authored-By: Claude <noreply@anthropic.com>
+        ```
+      - **JIRA** format:
+        ```
+        <Brief summary> (<JIRA-KEY>)
+
+        <Detailed description of what changed and why>
+
+        Ref: <JIRA-KEY>
+
+        Generated with [Claude Code](https://claude.com/claude-code)
+
+        Co-Authored-By: Claude <noreply@anthropic.com>
+        ```
     - Commit using:
       ```bash
       git add .
@@ -138,44 +170,84 @@ Automatically analyze a GitHub issue, implement the required changes, and create
 
 13. **Create pull request**
     - Use `gh pr create` with detailed PR description
-    - PR title: `<Brief summary> (fixes #<issue-number>)`
-    - PR body should include:
-      - ## Summary
-      - ## Problem (reference original issue)
-      - ## Solution
-      - ## Changes
-      - ## Testing
-      - Fixes #<issue-number>
-      - Generated with Claude Code
-    - Example:
-      ```bash
-      gh pr create --title "Add logging function (fixes #72)" --body "$(cat <<'EOF'
-      ## Summary
-      Implements logging function as requested in #72
+    - **GitHub**:
+      - PR title: `<Brief summary> (fixes #<issue-number>)`
+      - PR body should include:
+        - ## Summary
+        - ## Problem (reference original issue)
+        - ## Solution
+        - ## Changes
+        - ## Testing
+        - Fixes #<issue-number>
+        - Generated with Claude Code
+      - Example:
+        ```bash
+        gh pr create --title "Add logging function (fixes #72)" --body "$(cat <<'EOF'
+        ## Summary
+        Implements logging function as requested in #72
 
-      ## Problem
-      <Describe the problem from the issue>
+        ## Problem
+        <Describe the problem from the issue>
 
-      ## Solution
-      <Describe how you fixed it>
+        ## Solution
+        <Describe how you fixed it>
 
-      ## Changes
-      - <Change 1>
-      - <Change 2>
+        ## Changes
+        - <Change 1>
+        - <Change 2>
 
-      ## Testing
-      - [x] Tests pass
-      - [x] Code formatted
+        ## Testing
+        - [x] Tests pass
+        - [x] Code formatted
 
-      Fixes #72
+        Fixes #72
 
-      Generated with [Claude Code](https://claude.com/claude-code)
-      EOF
-      )"
-      ```
+        Generated with [Claude Code](https://claude.com/claude-code)
+        EOF
+        )"
+        ```
+    - **JIRA**:
+      - PR title: `<Brief summary> (<JIRA-KEY>)`
+      - PR body should include:
+        - ## Summary
+        - ## Problem (reference JIRA ticket)
+        - ## Solution
+        - ## Changes
+        - ## Testing
+        - Link to JIRA ticket
+        - Generated with Claude Code
+      - Example:
+        ```bash
+        gh pr create --title "Fix auth timeout (ACM-12345)" --body "$(cat <<'EOF'
+        ## Summary
+        Fixes authentication timeout as described in ACM-12345
 
-14. **Post comment on the issue explaining the implementation**
-    - After creating the PR, post a comment on the original issue
+        JIRA: https://issues.redhat.com/browse/ACM-12345
+
+        ## Problem
+        <Describe the problem from the JIRA ticket>
+
+        ## Solution
+        <Describe how you fixed it>
+
+        ## Changes
+        - <Change 1>
+        - <Change 2>
+
+        ## Testing
+        - [x] Tests pass
+        - [x] Code formatted
+
+        Ref: ACM-12345
+
+        Generated with [Claude Code](https://claude.com/claude-code)
+        EOF
+        )"
+        ```
+
+14. **[GitHub only] Post comment on the issue explaining the implementation**
+    - **Skip this step entirely for JIRA tickets** (there is no GitHub issue to comment on)
+    - After creating the PR, post a comment on the original GitHub issue
     - The comment should explain what was implemented, not just link to the PR
     - Use `gh issue comment <issue-number>` with a comprehensive explanation
     - Format:
@@ -210,7 +282,8 @@ Automatically analyze a GitHub issue, implement the required changes, and create
 
 15. **Provide summary to user**
     - Display PR URL
-    - Display issue comment confirmation
+    - **GitHub**: Display issue comment confirmation and link to issue
+    - **JIRA**: Display link to JIRA ticket (`https://issues.redhat.com/browse/<JIRA-KEY>`)
     - List files changed
     - Show test results
     - Remind user that CI will run automatically
@@ -225,8 +298,10 @@ Automatically analyze a GitHub issue, implement the required changes, and create
 - **Security**: Check for common vulnerabilities (SQL injection, XSS, command injection, etc.)
 
 ### Git Best Practices
-- **Branch naming**: `fix-issue-<number>-<brief-description>` or `feature-issue-<number>-<brief-description>`
-- **Commit messages**: Descriptive, reference issue number
+- **Branch naming**:
+  - GitHub: `fix-issue-<number>-<brief-description>` or `feature-issue-<number>-<brief-description>`
+  - JIRA: `<JIRA-KEY>-<brief-description>`
+- **Commit messages**: Descriptive, reference issue number or JIRA key
 - **One issue per PR**: Don't mix multiple unrelated changes
 
 ### Testing Requirements
@@ -240,6 +315,18 @@ Automatically analyze a GitHub issue, implement the required changes, and create
 ```
 Error: Issue #<number> not found
 Please check the issue number and try again
+```
+
+### JIRA Ticket Not Found
+```
+Error: JIRA ticket <KEY> not found or inaccessible
+Check that the key is correct and your credentials.json has a valid jira.token
+```
+
+### JIRA Credentials Missing
+```
+Error: Missing JIRA credentials
+Ensure credentials.json exists at the repo root with the structure: {"jira": {"token": "..."}}
 ```
 
 ### Tests Fail
@@ -262,15 +349,15 @@ Please check the issue number and try again
 ## Post-Implementation Checklist
 
 After completing implementation, verify:
-- [ ] Issue requirements fully addressed
+- [ ] Issue/ticket requirements fully addressed
 - [ ] Code follows repository patterns (CLAUDE.md)
 - [ ] Tests pass (or explanation if no tests needed)
 - [ ] Code formatted per project conventions
-- [ ] Commit message references issue number
-- [ ] PR description includes "Fixes #<issue-number>"
+- [ ] Commit message references issue number or JIRA key
+- [ ] PR description includes "Fixes #<issue-number>" (GitHub) or JIRA link (JIRA)
 - [ ] Branch pushed to remote
 - [ ] PR created successfully
-- [ ] Issue comment posted explaining the implementation
+- [ ] [GitHub only] Issue comment posted explaining the implementation
 
 ## Tips for Success
 
