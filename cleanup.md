@@ -1,10 +1,10 @@
 ---
-description: Cleanup local git repository by updating main and removing all other branches
+description: Cleanup local git repository by syncing fork, updating main, and removing all other branches
 ---
 
 # Cleanup Local Repository
 
-Clean up your local Git repository by checking out main, updating it to the latest version, and removing all other local branches.
+Clean up your local Git repository by checking out main, syncing from upstream (for forked repos), updating it to the latest version, and removing all other local branches.
 
 ## Workflow
 
@@ -28,7 +28,43 @@ Clean up your local Git repository by checking out main, updating it to the late
    - If checkout fails, explain error and exit
    - Confirm switched to main branch
 
-3. **Update main to latest version**
+3. **Sync from upstream (for forked repositories)**
+   ```bash
+   git remote get-url upstream 2>/dev/null
+   ```
+   - If the command succeeds (upstream remote exists), this is a fork:
+     1. Inform user: "Upstream remote detected. Syncing from upstream..."
+     2. Fetch upstream:
+        ```bash
+        git fetch upstream main
+        ```
+     3. Check if local main is behind upstream:
+        ```bash
+        git rev-list --count main..upstream/main
+        ```
+     4. If behind, merge upstream into local main:
+        ```bash
+        git merge --ff-only upstream/main
+        ```
+        - If merge succeeds, show how many commits were pulled from upstream
+        - If `--ff-only` fails (local main has diverged from upstream):
+          - Explain: "Local main has diverged from upstream/main"
+          - Suggest options:
+            - `git reset --hard upstream/main` (WARNING: discards local commits on main)
+            - Manual merge resolution
+            - Cancel operation
+          - Ask user how to proceed before continuing
+     5. Push the updated main to origin (to keep the fork in sync):
+        ```bash
+        git push origin main
+        ```
+        - If push fails (e.g., origin main has diverged or permission denied):
+          - Warn user but continue with cleanup (non-fatal)
+          - Suggest: "You may need to manually push main to origin later"
+     6. If already up to date with upstream, inform user: "Already up to date with upstream"
+   - If upstream remote does not exist: skip this step silently (proceed as before)
+
+4. **Update main to latest version**
    ```bash
    git pull origin main
    ```
@@ -42,7 +78,7 @@ Clean up your local Git repository by checking out main, updating it to the late
    - Show summary of changes pulled (if any)
    - If already up to date, inform user
 
-4. **Get list of all local branches (excluding main)**
+5. **Get list of all local branches (excluding main)**
    ```bash
    git branch | grep -v "^\* main$" | grep -v "^  main$" | sed 's/^[ *]*//'
    ```
@@ -50,7 +86,7 @@ Clean up your local Git repository by checking out main, updating it to the late
    - Count the number of branches to delete
    - If no other branches exist, inform user and skip deletion
 
-5. **Show branches to be deleted**
+6. **Show branches to be deleted**
    - Display the list of branches that will be deleted
    - Count total branches
    - Example output:
@@ -62,14 +98,14 @@ Clean up your local Git repository by checking out main, updating it to the late
      Total: 3 branches
      ```
 
-6. **Ask for confirmation**
+7. **Ask for confirmation**
    - Use AskUserQuestion tool:
      - "Are you sure you want to delete these X branches?"
        - Option 1: Yes, delete all branches
        - Option 2: No, cancel cleanup (keep branches)
    - If user cancels, exit gracefully with message
 
-7. **Delete all branches**
+8. **Delete all branches**
    ```bash
    git branch | grep -v "^\* main$" | grep -v "^  main$" | sed 's/^[ *]*//' | xargs git branch -D
    ```
@@ -77,14 +113,14 @@ Clean up your local Git repository by checking out main, updating it to the late
    - Show progress for each branch deleted
    - Catch any errors (e.g., if branch is currently checked out)
 
-8. **Verify cleanup**
+9. **Verify cleanup**
    ```bash
    git branch
    ```
    - Should only show main branch
    - Confirm cleanup completed successfully
 
-9. **Provide summary**
+10. **Provide summary**
    - Confirm main branch is up to date
    - Confirm number of branches deleted
    - Show current git status
@@ -98,6 +134,8 @@ Clean up your local Git repository by checking out main, updating it to the late
 - **Remote Branches**: This only deletes LOCAL branches, not remote branches
 - **Stashed Changes**: If you stashed changes, they remain available via `git stash list`
 - **Cannot Undo**: Once branches are deleted, you cannot recover them unless they exist on remote
+- **Fork Sync**: If an `upstream` remote exists, syncs from upstream before pulling from origin
+- **Push to Origin**: After upstream sync, pushes main to origin to keep the fork current
 
 ## Safety Warnings
 
@@ -125,6 +163,19 @@ WARNING: This will permanently delete all local branches except main.
   - `git reset --hard origin/main` (destroys local commits)
   - Manual merge resolution
   - Cancel operation
+
+### Upstream Sync Fails
+- If `git merge --ff-only upstream/main` fails, local main has diverged from upstream
+- Suggest options:
+  - `git reset --hard upstream/main` (destroys local commits on main)
+  - Manual merge resolution
+  - Cancel operation
+
+### Push to Origin Fails
+- If `git push origin main` fails after upstream sync
+- This is non-fatal - warn but continue with cleanup
+- Suggest user manually pushes later
+- Common causes: origin main has other commits, permission issues
 
 ### Branch Delete Fails
 - Some branches may fail to delete (e.g., currently checked out)
@@ -234,9 +285,45 @@ Claude: Checking for uncommitted changes... None found.
         Current branch: main (up to date)
 ```
 
+**Example 5: Fork repository with upstream sync**
+```
+User: /cleanup
+Claude: Checking for uncommitted changes... None found.
+        Checking out main branch...
+
+        Upstream remote detected. Syncing from upstream...
+        Fetching upstream/main...
+        Local main is behind upstream by 7 commits. Merging...
+        Successfully merged 7 commits from upstream/main.
+        Pushing updated main to origin...
+        Successfully pushed to origin.
+
+        Pulling latest changes from origin/main...
+        Already up to date.
+
+        Found 2 local branches to delete:
+        - feature-xyz
+        - fix-123
+
+        WARNING: This will permanently delete 2 local branches.
+        Are you sure you want to continue?
+        [User selects: Yes, delete all branches]
+
+        Deleting branches...
+        Deleted feature-xyz
+        Deleted fix-123
+
+        Cleanup complete!
+        - Main branch synced with upstream (7 new commits)
+        - Main branch pushed to origin
+        - 2 branches deleted
+        - Your local repository is now clean
+```
+
 ## Post-Cleanup Checklist
 
 After cleanup completes, remind the user:
+- If fork: Main branch is synced with upstream and pushed to origin
 - Main branch is up to date with origin/main
 - All local branches deleted (list count)
 - Repository is clean and ready for new work
