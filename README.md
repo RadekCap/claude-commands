@@ -36,8 +36,9 @@ git clone git@github.com:RadekCap/claude-commands.git ~/git/claude-commands
 # Remove existing ~/.claude/commands if it exists
 rm -rf ~/.claude/commands
 
-# Symlink commands
+# Symlink commands and global instructions
 ln -s ~/git/claude-commands ~/.claude/commands
+ln -sf ~/git/claude-commands/CLAUDE.md ~/.claude/CLAUDE.md
 
 # Copy hooks and statusline to ~/.claude/
 mkdir -p ~/.claude/hooks
@@ -73,9 +74,10 @@ Add to `~/.claude/settings.json`:
 
 **Benefits:**
 - Commands work in every repo without adding submodules
+- Global `CLAUDE.md` instructions (coaching, preferences) auto-load in every session
 - Status line shows context at bottom of terminal
 - Session resume shows where you left off
-- Update with `cd ~/git/claude-commands && git pull`
+- Update everything with `cd ~/git/claude-commands && git pull`
 
 ---
 
@@ -206,23 +208,23 @@ If you need commands specific to one project, you have two options:
 
 ## Global CLAUDE.md (Communication Preferences)
 
-This repo includes a `CLAUDE.md` file with personal preferences that apply across all Claude Code sessions.
-
-### Setup on Each Computer
-
-```bash
-# In any project with the submodule, update it:
-git submodule update --remote
-
-# Then create the symlink (one-time per computer):
-ln -sf /path/to/any-project/.claude/commands/CLAUDE.md ~/.claude/CLAUDE.md
-```
+This repo includes a `CLAUDE.md` file with global instructions (communication preferences, coaching, git workflow rules) that apply across all Claude Code sessions.
 
 ### How It Works
 
-- Your communication preferences are now in the shared `claude-commands` repo
-- The symlink makes them global for all Claude Code sessions on this computer
-- When you `git submodule update --remote` in any project, you get the latest preferences
+- `~/.claude/CLAUDE.md` is symlinked to this repo's `CLAUDE.md`
+- Claude Code auto-loads `~/.claude/CLAUDE.md` at the start of every session
+- Edit the file in this repo, push, and `git pull` on any machine to update
+
+### Setup
+
+If you used **Option 0 (Global Setup)**, the symlink is already created. Otherwise:
+
+```bash
+# One-time per computer (backs up existing file if present):
+[ -f ~/.claude/CLAUDE.md ] && cp ~/.claude/CLAUDE.md ~/.claude/CLAUDE.md.bak
+ln -sf ~/git/claude-commands/CLAUDE.md ~/.claude/CLAUDE.md
+```
 
 ---
 
