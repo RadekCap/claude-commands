@@ -23,13 +23,11 @@ COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
 # won't match because 'gh' won't be at a command position.
 if echo "$COMMAND" | grep -qE '^\s*gh\s+pr\s+create' || \
    echo "$COMMAND" | grep -qE '(&&|\|\||;)\s*gh\s+pr\s+create'; then
-  jq -n '{
-    hookSpecificOutput: {
-      hookEventName: "PreToolUse",
-      permissionDecision: "deny",
-      permissionDecisionReason: "BLOCKED: Print the full PR description to the terminal and get explicit user approval before creating the PR."
-    }
-  }'
+  # Exit non-zero with stderr message. This surfaces as a user-visible
+  # hook error that the user can choose to approve/override.
+  # Using "deny" would block with no override possibility.
+  echo "PR creation detected. Have you printed the full PR description and received user approval?" >&2
+  exit 1
 else
   exit 0
 fi
