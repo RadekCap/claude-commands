@@ -1,6 +1,6 @@
 #!/bin/bash
 # Setup script for claude-commands
-# Configures commands, hooks, statusline, and settings for Claude Code.
+# Configures commands, hooks, statusline, CLAUDE.md, and settings for Claude Code.
 #
 # Usage:
 #   git clone git@github.com:RadekCap/claude-commands.git ~/git/claude-commands
@@ -8,9 +8,10 @@
 #   ./setup.sh
 #
 # What it does:
-#   1. Symlinks commands to ~/.claude/commands/
-#   2. Copies statusline.sh to ~/.claude/
-#   3. Patches ~/.claude/settings.json with hooks and statusline config
+#   1. Symlinks ~/.claude/commands/ → this repo (all commands available instantly)
+#   2. Symlinks ~/.claude/CLAUDE.md → this repo's CLAUDE.md (global instructions)
+#   3. Copies statusline.sh to ~/.claude/
+#   4. Patches ~/.claude/settings.json with hooks, statusline, and sync config
 #
 # Safe to re-run: skips steps that are already done.
 
@@ -28,7 +29,8 @@ echo ""
 # Step 1: Create ~/.claude if needed
 mkdir -p "$CLAUDE_DIR"
 
-# Step 2: Symlink commands
+# Step 2: Symlink commands directory
+# Uses a directory symlink so new commands are available immediately
 if [ -L "$CLAUDE_DIR/commands" ]; then
     CURRENT_TARGET="$(readlink "$CLAUDE_DIR/commands")"
     if [ "$CURRENT_TARGET" = "$SCRIPT_DIR" ]; then
@@ -40,73 +42,76 @@ if [ -L "$CLAUDE_DIR/commands" ]; then
         echo "[OK] Commands symlink updated"
     fi
 elif [ -d "$CLAUDE_DIR/commands" ]; then
-    echo "[WARN] $CLAUDE_DIR/commands/ is a directory (not a symlink)"
-    echo "       To use shared commands, remove it first:"
-    echo "       rm -rf $CLAUDE_DIR/commands"
-    echo "       Then re-run this script."
+    # Check if it's a directory with individual symlinks (old setup)
+    echo "[MIGRATE] Converting individual command symlinks to directory symlink..."
+    # Back up any non-symlink files (custom commands not from this repo)
+    CUSTOM_CMDS=()
+    for f in "$CLAUDE_DIR/commands/"*.md; do
+        [ -e "$f" ] || continue
+        if [ ! -L "$f" ]; then
+            CUSTOM_CMDS+=("$(basename "$f")")
+            cp "$f" "/tmp/claude-cmd-backup-$(basename "$f")"
+        fi
+    done
+    rm -rf "$CLAUDE_DIR/commands"
+    ln -s "$SCRIPT_DIR" "$CLAUDE_DIR/commands"
+    echo "[OK] Commands directory symlinked"
+    if [ ${#CUSTOM_CMDS[@]} -gt 0 ]; then
+        echo "[WARN] Custom commands backed up to /tmp/:"
+        for c in "${CUSTOM_CMDS[@]}"; do
+            echo "       /tmp/claude-cmd-backup-$c"
+        done
+        echo "       Move these into your project's .claude/commands/ instead"
+    fi
 else
     ln -s "$SCRIPT_DIR" "$CLAUDE_DIR/commands"
     echo "[OK] Commands symlinked"
 fi
 
-# Step 3: Copy statusline
+# Step 3: Symlink CLAUDE.md (global instructions)
+if [ -L "$CLAUDE_DIR/CLAUDE.md" ]; then
+    CURRENT_TARGET="$(readlink "$CLAUDE_DIR/CLAUDE.md")"
+    if [ "$CURRENT_TARGET" = "$SCRIPT_DIR/CLAUDE.md" ]; then
+        echo "[OK] CLAUDE.md symlink already correct"
+    else
+        echo "[UPDATE] CLAUDE.md symlink points to $CURRENT_TARGET, updating..."
+        rm "$CLAUDE_DIR/CLAUDE.md"
+        ln -s "$SCRIPT_DIR/CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md"
+        echo "[OK] CLAUDE.md symlink updated"
+    fi
+elif [ -f "$CLAUDE_DIR/CLAUDE.md" ]; then
+    echo "[MIGRATE] Replacing CLAUDE.md copy with symlink..."
+    mv "$CLAUDE_DIR/CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md.backup"
+    ln -s "$SCRIPT_DIR/CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md"
+    echo "[OK] CLAUDE.md symlinked (backup at CLAUDE.md.backup)"
+else
+    ln -s "$SCRIPT_DIR/CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md"
+    echo "[OK] CLAUDE.md symlinked"
+fi
+
+# Step 4: Copy statusline
 cp "$SCRIPT_DIR/statusline.sh" "$CLAUDE_DIR/statusline.sh"
 chmod +x "$CLAUDE_DIR/statusline.sh"
 echo "[OK] Statusline installed"
 
-# Step 4: Ensure hooks are executable
+# Step 5: Ensure hooks are executable
 chmod +x "$SCRIPT_DIR/hooks/"*.sh
 echo "[OK] Hooks are executable"
 
-# Step 5: Patch settings.json
-# Uses jq to merge hook configuration without overwriting existing settings.
+# Step 6: Patch settings.json
 if ! command -v jq &> /dev/null; then
     echo ""
     echo "[ERROR] jq is required to patch settings.json"
     echo "        Install with: brew install jq (macOS) or sudo apt install jq (Linux)"
-    echo ""
-    echo "Alternatively, manually add this to $SETTINGS_FILE:"
-    echo ""
-    cat <<MANUAL
-{
-  "statusLine": {
-    "type": "command",
-    "command": "$CLAUDE_DIR/statusline.sh"
-  },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$SCRIPT_DIR/hooks/require-confirmation-before-pr.sh"
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "matcher": "resume",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$SCRIPT_DIR/hooks/on-resume.sh"
-          }
-        ]
-      }
-    ]
-  }
-}
-MANUAL
     exit 1
 fi
 
-# Build the hooks config using the actual script directory
-HOOKS_CONFIG=$(jq -n \
+# Build the full config
+SHARED_CONFIG=$(jq -n \
     --arg statusline "$CLAUDE_DIR/statusline.sh" \
     --arg pr_hook "$SCRIPT_DIR/hooks/require-confirmation-before-pr.sh" \
     --arg resume_hook "$SCRIPT_DIR/hooks/on-resume.sh" \
+    --arg sync_hook "$SCRIPT_DIR/hooks/sync-shared-commands.sh" \
     '{
         statusLine: {
             type: "command",
@@ -133,18 +138,39 @@ HOOKS_CONFIG=$(jq -n \
                             command: $resume_hook
                         }
                     ]
+                },
+                {
+                    matcher: "*",
+                    hooks: [
+                        {
+                            type: "command",
+                            command: $sync_hook
+                        }
+                    ]
                 }
             ]
         }
     }')
 
 if [ -f "$SETTINGS_FILE" ]; then
-    # Merge with existing settings (existing values win for non-hook fields)
-    MERGED=$(jq -s '.[0] * .[1]' "$SETTINGS_FILE" <(echo "$HOOKS_CONFIG"))
+    # If settings.json is a symlink, replace it with a real file
+    if [ -L "$SETTINGS_FILE" ]; then
+        REAL_SETTINGS=$(cat "$SETTINGS_FILE")
+        rm "$SETTINGS_FILE"
+        echo "$REAL_SETTINGS" > "$SETTINGS_FILE"
+        echo "[MIGRATE] Converted settings.json from symlink to file"
+    fi
+    # Merge: shared config provides the base, existing settings override non-hook fields
+    # For hooks, we replace entirely (shared config is the source of truth)
+    EXISTING=$(cat "$SETTINGS_FILE")
+    MERGED=$(echo "$EXISTING" | jq --argjson shared "$SHARED_CONFIG" '
+        # Keep all existing fields except hooks/statusLine (those come from shared)
+        . * $shared
+    ')
     echo "$MERGED" > "$SETTINGS_FILE"
     echo "[OK] Settings updated (merged with existing)"
 else
-    echo "$HOOKS_CONFIG" > "$SETTINGS_FILE"
+    echo "$SHARED_CONFIG" > "$SETTINGS_FILE"
     echo "[OK] Settings created"
 fi
 
@@ -152,10 +178,15 @@ echo ""
 echo "=== Setup Complete ==="
 echo ""
 echo "Installed:"
-echo "  - Commands:   $CLAUDE_DIR/commands -> $SCRIPT_DIR"
+echo "  - Commands:   $CLAUDE_DIR/commands/ -> $SCRIPT_DIR/"
+echo "  - CLAUDE.md:  $CLAUDE_DIR/CLAUDE.md -> $SCRIPT_DIR/CLAUDE.md"
 echo "  - Statusline: $CLAUDE_DIR/statusline.sh"
 echo "  - Hooks:"
 echo "    - PreToolUse:   Block gh pr create (require confirmation)"
 echo "    - SessionStart: Show context on resume"
+echo "    - SessionStart: Auto-sync shared commands from GitHub"
+echo ""
+echo "Auto-sync: Every new Claude Code session will pull latest changes"
+echo "           from the claude-commands repo automatically."
 echo ""
 echo "Restart Claude Code to apply changes."
