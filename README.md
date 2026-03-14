@@ -1,292 +1,58 @@
 # Claude Commands
 
-Shared Claude Code slash commands that work across all repositories.
+Shared Claude Code commands, hooks, and settings that work across all repositories and machines.
 
-## Included Commands
+## TL;DR
 
-| Command | Description |
-|---------|-------------|
-| `/sync-main` | Sync local main branch with remote and optionally create a new feature branch |
-| `/cleanup` | Cleanup local git repository by updating main and removing all other branches |
-| `/implement-issue <number>` | Analyze a GitHub issue and create a pull request that implements the fix |
-| `/prepare-worktree <number>` | Create a git worktree for implementing a GitHub issue in isolation |
-| `/close-worktree <number>` | Clean up a git worktree after the PR has been merged |
-| `/copilot-review <pr-number>` | Process GitHub Copilot code review findings for a PR |
-| `/context` | Show current session context (directory, branch, todos) for quick orientation |
-
-## Context-Switching Tools
-
-Tools to help when working with multiple Claude instances in parallel:
-
-| File | Purpose |
-|------|---------|
-| `statusline.sh` | Status line showing `[Model] dir \| branch \| $cost` |
-| `hooks/on-resume.sh` | Shows context automatically when resuming a session |
-
-## Setup
-
-### Option 0: Global Setup (Recommended for Personal Use)
-
-Use this to make commands available in ALL repos on your machine without submodules.
+### A. New computer
 
 ```bash
-# Clone to a known location
 git clone git@github.com:RadekCap/claude-commands.git ~/git/claude-commands
-
-# Remove existing ~/.claude/commands if it exists
-rm -rf ~/.claude/commands
-
-# Symlink commands and global instructions
-ln -s ~/git/claude-commands ~/.claude/commands
-ln -sf ~/git/claude-commands/CLAUDE.md ~/.claude/CLAUDE.md
-
-# Copy hooks and statusline to ~/.claude/
-mkdir -p ~/.claude/hooks
-cp ~/git/claude-commands/hooks/* ~/.claude/hooks/
-cp ~/git/claude-commands/statusline.sh ~/.claude/
-
-# Make scripts executable
-chmod +x ~/.claude/statusline.sh ~/.claude/hooks/*.sh
+cd ~/git/claude-commands
+./setup.sh
 ```
 
-Add to `~/.claude/settings.json`:
-```json
-{
-  "statusLine": {
-    "type": "command",
-    "command": "~/.claude/statusline.sh"
-  },
-  "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "resume",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/on-resume.sh"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+### B. Already set up, just need to update
 
-**Benefits:**
-- Commands work in every repo without adding submodules
-- Global `CLAUDE.md` instructions (coaching, preferences) auto-load in every session
-- Status line shows context at bottom of terminal
-- Session resume shows where you left off
-- Update everything with `cd ~/git/claude-commands && git pull`
+Nothing to do — updates are pulled automatically at the start of every Claude Code session.
 
 ---
 
-### Option 1: Per-Repo Submodule (Fresh Setup)
-
-Use this if your repo doesn't have `.claude/commands/` yet.
-
-**Claude Prompt** (copy and paste to Claude):
-
-```
-Add shared Claude commands to this repository as a git submodule.
-
-Steps:
-1. Create .claude directory if it doesn't exist: mkdir -p .claude
-2. Add submodule: git submodule add https://github.com/RadekCap/claude-commands.git .claude/commands
-3. Commit: git commit -m "Add shared Claude commands as submodule"
-4. Push: git push
-
-After completion, verify the commands work by typing /sync-main
-```
-
-**Manual Steps**:
-
-```bash
-mkdir -p .claude
-git submodule add https://github.com/RadekCap/claude-commands.git .claude/commands
-git commit -m "Add shared Claude commands as submodule"
-git push
-```
-
----
-
-### Option 2: Replace Existing Local Commands
-
-Use this if you already have `.claude/commands/` with manually copied command files.
-
-**Claude Prompt** (copy and paste to Claude):
-
-```
-Replace local Claude commands with the shared submodule repository.
-
-Steps:
-1. Check for any local customizations in .claude/commands/ that should be preserved
-2. Remove the existing commands directory: rm -rf .claude/commands
-3. Stage the removal: git add .claude/commands
-4. Add the shared repo as submodule: git submodule add https://github.com/RadekCap/claude-commands.git .claude/commands
-5. Commit: git commit -m "Replace local Claude commands with shared submodule"
-6. Push: git push
-
-After completion, verify the commands work by typing /sync-main
-```
-
-**Manual Steps**:
-
-```bash
-# Remove existing commands
-rm -rf .claude/commands
-git add .claude/commands
-
-# Add submodule
-git submodule add https://github.com/RadekCap/claude-commands.git .claude/commands
-
-# Commit and push
-git commit -m "Replace local Claude commands with shared submodule"
-git push
-```
-
----
-
-## Cloning Repositories with Submodules
-
-When cloning a repo that uses this submodule:
-
-```bash
-# Clone with submodules in one command
-git clone --recurse-submodules https://github.com/USER/REPO.git
-
-# Or if already cloned without submodules
-git submodule update --init --recursive
-```
-
----
-
-## Updating Commands
-
-When commands are updated in this repository, pull the changes into your projects:
-
-**Claude Prompt**:
-
-```
-Update the shared Claude commands submodule to the latest version.
-
-Steps:
-1. Update submodule: git submodule update --remote .claude/commands
-2. Commit: git commit -am "Update shared Claude commands"
-3. Push: git push
-```
-
-**Manual Steps**:
-
-```bash
-git submodule update --remote .claude/commands
-git commit -am "Update shared Claude commands"
-git push
-```
-
----
-
-## Adding New Commands
-
-To add a new command to the shared repository:
-
-1. Clone this repo: `git clone https://github.com/RadekCap/claude-commands.git`
-2. Create new command file: `your-command.md`
-3. Commit and push
-4. Update submodule in each project (see "Updating Commands" above)
-
----
-
-## Project-Specific Commands
-
-If you need commands specific to one project, you have two options:
-
-1. **Override in project**: Create a command with the same name in a different location (project commands take precedence)
-2. **Keep separate**: Store project-specific commands in a different directory
-
----
-
-## Global CLAUDE.md (Communication Preferences)
-
-This repo includes a `CLAUDE.md` file with global instructions (communication preferences, coaching, git workflow rules) that apply across all Claude Code sessions.
-
-### How It Works
-
-- `~/.claude/CLAUDE.md` is symlinked to this repo's `CLAUDE.md`
-- Claude Code auto-loads `~/.claude/CLAUDE.md` at the start of every session
-- Edit the file in this repo, push, and `git pull` on any machine to update
-
-### Setup
-
-If you used **Option 0 (Global Setup)**, the symlink is already created. Otherwise:
-
-```bash
-# One-time per computer (backs up existing file if present):
-[ -f ~/.claude/CLAUDE.md ] && cp ~/.claude/CLAUDE.md ~/.claude/CLAUDE.md.bak
-ln -sf ~/git/claude-commands/CLAUDE.md ~/.claude/CLAUDE.md
-```
-
----
-
-## Troubleshooting
-
-### Commands not showing up after clone
-
-```bash
-git submodule update --init --recursive
-```
-
-### Submodule shows as empty directory
-
-```bash
-git submodule init
-git submodule update
-```
-
-### Detached HEAD in submodule
-
-This is normal for submodules. The parent repo tracks a specific commit, not a branch.
-
----
-
-## MCP Servers Configuration
-
-This repo includes `mcp_servers.json` with pre-configured MCP (Model Context Protocol) servers.
-
-### Setup on Each Computer
-
-```bash
-# Copy to Claude config directory
-cp mcp_servers.json ~/.claude/mcp_servers.json
-
-# Restart Claude Code to activate
-```
-
-### Included Servers
-
-| Server | Purpose | Tokens Required |
-|--------|---------|-----------------|
-| Kubernetes | kubectl operations, cluster inspection | None (uses ~/.kube/config) |
-| Azure | Azure CLI, resource groups, storage, databases | None (uses `az login`) |
-
-### Adding More Servers
-
-Edit `~/.claude/mcp_servers.json` to add servers like GitHub, Brave Search, etc:
-
-```json
-{
-  "mcpServers": {
-    "kubernetes": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-kubernetes"]
-    },
-    "github": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "<your-token>"
-      }
-    }
-  }
-}
-```
+## What you get
+
+| What | How it works |
+|---|---|
+| Slash commands (`/cleanup`, `/sync-main`, etc.) | `~/.claude/commands/` symlinked to this repo |
+| Global instructions (coaching, git rules) | `~/.claude/CLAUDE.md` symlinked to this repo |
+| Hooks (PR confirmation, session resume, auto-sync) | Paths in `~/.claude/settings.json` |
+| Status line (model, dir, branch, cost) | `~/.claude/statusline.sh` |
+
+## Included commands
+
+| Command | What it does |
+|---|---|
+| `/sync-main` | Sync main with remote, optionally create feature branch |
+| `/cleanup` | Update main, delete all other local branches |
+| `/implement-issue <number>` | Analyze a GitHub issue and create a PR |
+| `/prepare-worktree <number>` | Create isolated git worktree for an issue |
+| `/close-worktree <number>` | Clean up worktree after PR merge |
+| `/copilot-review <pr>` | Process GitHub Copilot review findings |
+| `/context` | Show current directory, branch, and todos |
+
+## Included hooks
+
+| Hook | Trigger | What it does |
+|---|---|---|
+| `require-confirmation-before-pr.sh` | Before `gh pr create` | Forces Claude to show PR description and ask for approval |
+| `on-resume.sh` | Session resume | Shows directory and branch context |
+| `sync-shared-commands.sh` | Every session start | Auto-pulls this repo from GitHub |
+
+## Adding a new command
+
+1. Create `your-command.md` in this repo
+2. Commit and push
+3. It's automatically available everywhere (directory symlink + auto-sync)
+
+## How auto-sync works
+
+Every Claude Code session runs `git pull --ff-only` on this repo. If you pushed changes from another machine, they're picked up automatically. If offline, it silently skips.
