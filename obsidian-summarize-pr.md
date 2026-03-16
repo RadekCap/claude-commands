@@ -14,15 +14,15 @@ Read a pull request, summarize its changes and decisions, and save as an Obsidia
 
 ## Configuration
 
-- **Inbox path**: Use the `$OBSIDIAN_INBOX` environment variable
-- **Default**: `/Users/radoslavcap/git/obsidian-rh-acm/050 Inbox` if `$OBSIDIAN_INBOX` is not set
+- **Inbox path**: Use the `$OBSIDIAN_INBOX` environment variable (required)
 
 ## Steps
 
 1. **Resolve the Inbox path**
    ```bash
-   echo "${OBSIDIAN_INBOX:-/Users/radoslavcap/git/obsidian-rh-acm/050 Inbox}"
+   echo "$OBSIDIAN_INBOX"
    ```
+   - If `$OBSIDIAN_INBOX` is not set, stop and tell the user to set it
    - Verify the directory exists
 
 2. **Fetch PR details**
@@ -68,7 +68,7 @@ Read a pull request, summarize its changes and decisions, and save as an Obsidia
    - `git commit -m "Add PR summary: PR <number> - <title>"` with `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>`
    - `git push -u origin <branch>`
    - `gh pr create --title "Add PR summary: <title>" --body "## Summary\n- Exported PR <number> summary from Claude Code session"`
-   - `gh pr merge --merge`
+   - `gh pr merge --squash`
    - `git checkout main && git pull && git branch -d <branch>`
 
 5. **Confirm completion**
