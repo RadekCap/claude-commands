@@ -15,14 +15,14 @@ Search your Obsidian vault for notes matching a query, read them, and provide a 
 ## Configuration
 
 - **Vault path**: Use the `$OBSIDIAN_INBOX` environment variable to determine the vault root (parent directory of Inbox)
-- **Default vault**: `/Users/radoslavcap/git/obsidian-rh-acm` if `$OBSIDIAN_INBOX` is not set
 
 ## Steps
 
 1. **Resolve the vault path**
    ```bash
-   VAULT="$(dirname "${OBSIDIAN_INBOX:-/Users/radoslavcap/git/obsidian-rh-acm/050 Inbox}")"
+   VAULT="$(dirname "$OBSIDIAN_INBOX")"
    ```
+   - If `$OBSIDIAN_INBOX` is not set, stop and tell the user to set it
    - Verify the directory exists
 
 2. **Search for matching notes**
