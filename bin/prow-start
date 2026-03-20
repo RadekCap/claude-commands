@@ -1,0 +1,61 @@
+#!/bin/bash
+# Run when STARTING work. Fetches remotes and warns if local branches are behind.
+
+set -euo pipefail
+
+CAPI_TESTS_DIR="$HOME/git/github/stolostron/capi-tests"
+RELEASE_DIR="$HOME/git/github/openshift/release"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
+problems=0
+
+check_branch() {
+    local repo_dir="$1"
+    local branch="$2"
+    local label="$3"
+
+    if ! git -C "$repo_dir" rev-parse --verify "$branch" &>/dev/null; then
+        return
+    fi
+
+    git -C "$repo_dir" fetch origin "$branch" --quiet 2>/dev/null || true
+
+    local local_sha remote_sha
+    local_sha=$(git -C "$repo_dir" rev-parse "$branch" 2>/dev/null)
+    remote_sha=$(git -C "$repo_dir" rev-parse "origin/$branch" 2>/dev/null || echo "none")
+
+    if [ "$remote_sha" = "none" ]; then
+        return
+    elif [ "$local_sha" = "$remote_sha" ]; then
+        printf "  ${GREEN}OK${NC}  %s\n" "$label / $branch"
+    else
+        local behind
+        behind=$(git -C "$repo_dir" rev-list --count "$branch..origin/$branch" 2>/dev/null || echo 0)
+        if [ "$behind" -gt 0 ]; then
+            printf "  ${RED}!!${NC}  %s — ${RED}%s behind remote, pull first!${NC}\n" "$label / $branch" "$behind"
+            problems=$((problems + 1))
+        else
+            printf "  ${GREEN}OK${NC}  %s (ahead of remote, that's fine)\n" "$label / $branch"
+        fi
+    fi
+}
+
+echo "Checking branches before starting work..."
+echo ""
+
+check_branch "$CAPI_TESTS_DIR" "configure-prow"                "capi-tests"
+check_branch "$CAPI_TESTS_DIR" "configure-prow-mgmt"           "capi-tests"
+check_branch "$RELEASE_DIR"    "stolostron-capi-tests-ci"       "release"
+check_branch "$RELEASE_DIR"    "stolostron-capi-tests-ci-mgmt"  "release"
+
+echo ""
+if [ "$problems" -gt 0 ]; then
+    echo -e "${RED}Pull stale branches before making changes!${NC}"
+    exit 1
+else
+    echo -e "${GREEN}All branches up to date. Safe to start.${NC}"
+fi

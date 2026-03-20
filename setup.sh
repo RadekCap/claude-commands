@@ -174,6 +174,20 @@ else
     echo "[OK] Settings created"
 fi
 
+# Step 7: Symlink bin scripts to ~/bin
+mkdir -p "$HOME/bin"
+for script in "$SCRIPT_DIR/bin/"*; do
+    [ -f "$script" ] || continue
+    name="$(basename "$script")"
+    target="$HOME/bin/$name"
+    if [ -L "$target" ] && [ "$(readlink "$target")" = "$script" ]; then
+        echo "[OK] ~/bin/$name already symlinked"
+    else
+        ln -sf "$script" "$target"
+        echo "[OK] ~/bin/$name symlinked"
+    fi
+done
+
 echo ""
 echo "=== Setup Complete ==="
 echo ""

@@ -1,0 +1,63 @@
+#!/bin/bash
+# Run when STOPPING work. Warns if any branches have unpushed commits.
+
+set -euo pipefail
+
+CAPI_TESTS_DIR="$HOME/git/github/stolostron/capi-tests"
+RELEASE_DIR="$HOME/git/github/openshift/release"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
+problems=0
+
+check_branch() {
+    local repo_dir="$1"
+    local branch="$2"
+    local label="$3"
+
+    if ! git -C "$repo_dir" rev-parse --verify "$branch" &>/dev/null; then
+        return
+    fi
+
+    git -C "$repo_dir" fetch origin "$branch" --quiet 2>/dev/null || true
+
+    local local_sha remote_sha
+    local_sha=$(git -C "$repo_dir" rev-parse "$branch" 2>/dev/null)
+    remote_sha=$(git -C "$repo_dir" rev-parse "origin/$branch" 2>/dev/null || echo "none")
+
+    if [ "$remote_sha" = "none" ]; then
+        printf "  ${YELLOW}??${NC}  %s — no remote tracking\n" "$label / $branch"
+        problems=$((problems + 1))
+        return
+    elif [ "$local_sha" = "$remote_sha" ]; then
+        printf "  ${GREEN}OK${NC}  %s\n" "$label / $branch"
+    else
+        local ahead
+        ahead=$(git -C "$repo_dir" rev-list --count "origin/$branch..$branch" 2>/dev/null || echo 0)
+        if [ "$ahead" -gt 0 ]; then
+            printf "  ${RED}!!${NC}  %s — ${RED}%s unpushed commit(s)!${NC}\n" "$label / $branch" "$ahead"
+            problems=$((problems + 1))
+        else
+            printf "  ${GREEN}OK${NC}  %s\n" "$label / $branch"
+        fi
+    fi
+}
+
+echo "Checking branches before stopping work..."
+echo ""
+
+check_branch "$CAPI_TESTS_DIR" "configure-prow"                "capi-tests"
+check_branch "$CAPI_TESTS_DIR" "configure-prow-mgmt"           "capi-tests"
+check_branch "$RELEASE_DIR"    "stolostron-capi-tests-ci"       "release"
+check_branch "$RELEASE_DIR"    "stolostron-capi-tests-ci-mgmt"  "release"
+
+echo ""
+if [ "$problems" -gt 0 ]; then
+    echo -e "${RED}Push your changes before switching computers!${NC}"
+    exit 1
+else
+    echo -e "${GREEN}All branches pushed. Safe to stop.${NC}"
+fi
