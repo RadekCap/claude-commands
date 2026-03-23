@@ -38,6 +38,11 @@ Nothing to do — updates are pulled automatically at the start of every Claude 
 | `/close-worktree <number>` | Clean up worktree after PR merge |
 | `/copilot-review <pr>` | Process GitHub Copilot review findings |
 | `/context` | Show current directory, branch, and todos |
+| `/obsidian-summarize-session` | Summarize Claude Code session as an Obsidian note |
+| `/obsidian-summarize-meeting` | Capture meeting notes as an Obsidian note with diary link |
+| `/obsidian-summarize-pr` | Summarize a GitHub PR as an Obsidian note |
+| `/obsidian-export` | Export a topic/brainstorm to an Obsidian note |
+| `/obsidian-search` | Search Obsidian vault and summarize findings |
 
 ## Included hooks
 
