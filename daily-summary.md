@@ -345,6 +345,12 @@ Note: Unlike other Obsidian commands, the daily summary uses a direct push to ma
      - Write the file
      - Ask before committing and pushing
 
+6. **Offer /quick-pr** (Phase 3 — always at the end)
+   - After Phase 2 completes (whether the user saved to Obsidian or not), offer to run `/quick-pr` for any repos that have uncommitted changes from this session
+   - Typical repos with changes: `claude-commands` (if the command definition was updated), `obsidian-rh-acm` (if daily note was saved)
+   - Ask: "Run /quick-pr for changed repos? (y/n)"
+   - If yes, run the quick-pr workflow for each repo with changes
+
 ## Error Handling
 
 - If `gh` is not authenticated, show: "⚠ GitHub CLI not authenticated. Run `gh auth login` first."
