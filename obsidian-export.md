@@ -36,7 +36,7 @@ The title argument becomes the filename: `<Title>.md`
 3. **Write the note**
    - Filename: `<Title>.md` in the Inbox path
    - Use Obsidian-flavored markdown:
-     - `# Heading` for the title
+     - Do NOT add a `# Heading` for the title — Obsidian already shows the filename as the title
      - `[[wikilinks]]` for references to other notes when relevant
      - Standard markdown for everything else
    - Structure the note with clear headings and bullet points
