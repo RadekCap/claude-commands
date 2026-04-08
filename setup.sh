@@ -89,10 +89,26 @@ else
     echo "[OK] CLAUDE.md symlinked"
 fi
 
-# Step 4: Copy statusline
-cp "$SCRIPT_DIR/statusline.sh" "$CLAUDE_DIR/statusline.sh"
-chmod +x "$CLAUDE_DIR/statusline.sh"
-echo "[OK] Statusline installed"
+# Step 4: Symlink statusline
+if [ -L "$CLAUDE_DIR/statusline.sh" ]; then
+    CURRENT_TARGET="$(readlink "$CLAUDE_DIR/statusline.sh")"
+    if [ "$CURRENT_TARGET" = "$SCRIPT_DIR/statusline.sh" ]; then
+        echo "[OK] Statusline symlink already correct"
+    else
+        echo "[UPDATE] Statusline symlink points to $CURRENT_TARGET, updating..."
+        rm "$CLAUDE_DIR/statusline.sh"
+        ln -s "$SCRIPT_DIR/statusline.sh" "$CLAUDE_DIR/statusline.sh"
+        echo "[OK] Statusline symlink updated"
+    fi
+elif [ -f "$CLAUDE_DIR/statusline.sh" ]; then
+    echo "[MIGRATE] Replacing statusline copy with symlink..."
+    rm "$CLAUDE_DIR/statusline.sh"
+    ln -s "$SCRIPT_DIR/statusline.sh" "$CLAUDE_DIR/statusline.sh"
+    echo "[OK] Statusline symlinked (replaced copy)"
+else
+    ln -s "$SCRIPT_DIR/statusline.sh" "$CLAUDE_DIR/statusline.sh"
+    echo "[OK] Statusline symlinked"
+fi
 
 # Step 5: Ensure hooks are executable
 chmod +x "$SCRIPT_DIR/hooks/"*.sh
@@ -194,7 +210,7 @@ echo ""
 echo "Installed:"
 echo "  - Commands:   $CLAUDE_DIR/commands/ -> $SCRIPT_DIR/"
 echo "  - CLAUDE.md:  $CLAUDE_DIR/CLAUDE.md -> $SCRIPT_DIR/CLAUDE.md"
-echo "  - Statusline: $CLAUDE_DIR/statusline.sh"
+echo "  - Statusline: $CLAUDE_DIR/statusline.sh -> $SCRIPT_DIR/statusline.sh"
 echo "  - Hooks:"
 echo "    - PreToolUse:   Block gh pr create (require confirmation)"
 echo "    - SessionStart: Show context on resume"
