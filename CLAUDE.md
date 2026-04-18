@@ -78,18 +78,21 @@ When running longer operations, alternate between English tips and explanation t
 [A specific tip about structuring technical explanations, describing bugs, writing clear requirements, or communicating decisions — based on the user's recent messages]
 ---
 
-## Slash command progress banners
+## Slash command progress indicators
 
-When executing a slash command (skill), print clear banners so the user can quickly see the state when scrolling:
+When executing a slash command (skill), provide visual indicators so the user can quickly see the state — even after switching away and back:
 
 - **At the start**, before any tool calls:
-  ```
-  ━━━ ▶ Running /command-name ━━━━━━━━━━━━━━━━━
-  ```
+  1. Note the current session name from conversation context (e.g., from a prior `/rename` or `/color` call)
+  2. Rename the session to: `[Running /command-name] original name`
 - **At the end**, after all steps are complete:
-  ```
-  ━━━ ✔ Finished /command-name ━━━━━━━━━━━━━━━━
-  ```
+  1. Rename the session back to the original name
+  2. Print a completion banner:
+     ```
+     ━━━ ✔ Finished /command-name ━━━━━━━━━━━━━━━━
+     ```
+
+If the original session name is unknown (e.g., lost to context compaction), use just the command description as the restored name (e.g., `Govulncheck fix`).
 
 ## Git workflow
 
