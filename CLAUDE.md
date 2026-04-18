@@ -78,6 +78,19 @@ When running longer operations, alternate between English tips and explanation t
 [A specific tip about structuring technical explanations, describing bugs, writing clear requirements, or communicating decisions — based on the user's recent messages]
 ---
 
+## Slash command progress banners
+
+When executing a slash command (skill), print clear banners so the user can quickly see the state when scrolling:
+
+- **At the start**, before any tool calls:
+  ```
+  ━━━ ▶ Running /command-name ━━━━━━━━━━━━━━━━━
+  ```
+- **At the end**, after all steps are complete:
+  ```
+  ━━━ ✔ Finished /command-name ━━━━━━━━━━━━━━━━
+  ```
+
 ## Git workflow
 
 - Always create a feature branch and open a pull request for changes
