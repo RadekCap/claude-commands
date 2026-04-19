@@ -68,6 +68,12 @@ TOKEN=$(python3 -c "import json; d=json.load(open('credentials.json')); print(d[
 
 Note: Individual issue GET still works on v2 (`/rest/api/2/issue/ARO-XXXXX`). Only JQL search requires v3.
 
+### Weekly Notes (Manual Highlights)
+
+Read `050 Inbox/weekly-notes.md` from the Obsidian vault. This file contains manually added notes — context, achievements, and items that don't appear in GitHub or Jira. These become the **Highlights** section at the top of the report.
+
+After the report is confirmed by the user, clear the `## Notes` section of this file (keep the frontmatter and description intact).
+
 ### External PRs
 
 Check for any notable PRs in related repos (e.g., openshift/release):
@@ -79,6 +85,9 @@ Check for any notable PRs in related repos (e.g., openshift/release):
 Format the output for **Slack copy-paste** — use Slack emoji syntax and full URLs (not markdown links, as those get lost when pasting):
 
 ```
+*Highlights* :star:
+- Item from weekly-notes (context not captured by GitHub/Jira)
+
 *Done* :white_check_mark:
 
 *<Headline achievement>* — brief description
@@ -132,21 +141,31 @@ Format the output for **Slack copy-paste** — use Slack emoji syntax and full U
    - Use provided start date or default to 7 days ago
    - Calculate: `date -d '7 days ago' +%Y-%m-%d`
 
-2. **Gather GitHub data**
+2. **Read weekly notes**
+   - Read `050 Inbox/weekly-notes.md` from the Obsidian vault (path relative to the vault root)
+   - Extract bullet points from the `## Notes` section
+   - These become the *Highlights* section at the top of the report
+   - If the file is empty or has no notes, skip the Highlights section
+
+3. **Gather GitHub data**
    - Fetch merged PRs, open PRs, closed issues, workflow status (in parallel)
 
-3. **Gather Jira data**
+4. **Gather Jira data**
    - Read credentials from `credentials.json`
    - Fetch resolved and open issues via v3 search API
 
-4. **Check previous status** (if available in memory)
+5. **Check previous status** (if available in memory)
    - Compare with previous "Next" items to track continuity
    - Carry forward items that are still in progress
 
-5. **Compose the report**
-   - Follow the output format above
+6. **Compose the report**
+   - Follow the output format above — lead with Highlights from weekly notes
    - Print the report to the terminal
    - Wait for user confirmation or edits before considering done
+
+7. **Clear weekly notes**
+   - After the user confirms the report, clear the `## Notes` section in `050 Inbox/weekly-notes.md`
+   - Keep the frontmatter and description header intact
 
 ## Tips
 
