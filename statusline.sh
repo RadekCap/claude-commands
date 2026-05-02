@@ -1,6 +1,6 @@
 #!/bin/bash
 # Claude Code status line script
-# Shows: [Model] Directory | Branch | Context% | Cost
+# Shows: [Model] Directory | Branch | Context% | Cost | Learning Progress
 
 input=$(cat)
 
@@ -33,10 +33,37 @@ if [ "$CTX_PCT" != "0" ] && [ -n "$CTX_PCT" ]; then
     CTX_FMT="ctx:${CTX_PCT}%"
 fi
 
+# Learning progress from project's active plan
+LEARN_FMT=""
+PLAN_FILE=""
+ACTIVE_PLAN_MARKER="$PROJECT_DIR/.claude/active-plan"
+if [ -f "$ACTIVE_PLAN_MARKER" ]; then
+    PLAN_NAME=$(cat "$ACTIVE_PLAN_MARKER" 2>/dev/null | tr -d '[:space:]')
+    [ -n "$PLAN_NAME" ] && PLAN_FILE="$HOME/.claude/plans/$PLAN_NAME"
+    [ ! -f "$PLAN_FILE" ] && PLAN_FILE=""
+fi
+if [ -n "$PLAN_FILE" ]; then
+        DONE=$(grep -c '^\- \[x\]' "$PLAN_FILE" 2>/dev/null)
+        [ -z "$DONE" ] && DONE=0
+        TODO=$(grep -c '^\- \[ \]' "$PLAN_FILE" 2>/dev/null)
+        [ -z "$TODO" ] && TODO=0
+        TOTAL=$((DONE + TODO))
+        if [ "$TOTAL" -gt 0 ]; then
+            CURRENT=$(grep '^\- \[ \]' "$PLAN_FILE" 2>/dev/null | head -1 | sed 's/^- \[ \] \*\*//' | sed 's/\*\*.*//' | cut -c1-20)
+            FILLED=$((DONE * 10 / TOTAL))
+            BAR=""
+            for i in $(seq 1 10); do
+                [ "$i" -le "$FILLED" ] && BAR="${BAR}▓" || BAR="${BAR}░"
+            done
+            LEARN_FMT="[${DONE}/${TOTAL}] ${BAR} ▶ ${CURRENT}"
+        fi
+fi
+
 # Build output
 OUTPUT="[$MODEL] $DIR_NAME"
 [ -n "$BRANCH" ] && OUTPUT="$OUTPUT | $BRANCH"
 [ -n "$CTX_FMT" ] && OUTPUT="$OUTPUT | $CTX_FMT"
 [ -n "$COST_FMT" ] && OUTPUT="$OUTPUT | $COST_FMT"
+[ -n "$LEARN_FMT" ] && OUTPUT="$OUTPUT | $LEARN_FMT"
 
 echo "$OUTPUT"
