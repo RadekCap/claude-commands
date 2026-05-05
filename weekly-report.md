@@ -23,25 +23,33 @@ If no start date is provided, default to 7 days ago.
 
 ### GitHub
 
-1. **Merged PRs** — PRs merged in the date range:
-   ```bash
-   gh pr list --state merged --search "merged:>=$START_DATE" --json number,title,url,mergedAt --limit 30
-   ```
+Search across ALL relevant orgs and repos — not just the current repo. The user's work spans `stolostron/`, `openshift/`, and personal `RadekCap/` repos.
 
-2. **Open PRs** — Currently open PRs:
+1. **Merged PRs** — Search across all orgs using the GitHub search API:
    ```bash
-   gh pr list --state open --json number,title,url --limit 20
-   ```
+   # stolostron org
+   gh api search/issues --method GET \
+     -f "q=author:RadekCap type:pr is:merged merged:>=$START_DATE org:stolostron" \
+     --jq '.items[] | {url: .html_url, title: .title, merged_at: .closed_at}'
 
-3. **Closed Issues** — Issues closed in the date range:
-   ```bash
-   gh issue list --state closed --search "closed:>=$START_DATE" --json number,title,url --limit 20
+   # openshift org
+   gh api search/issues --method GET \
+     -f "q=author:RadekCap type:pr is:merged merged:>=$START_DATE org:openshift" \
+     --jq '.items[] | {url: .html_url, title: .title, merged_at: .closed_at}'
    ```
+   Run both in parallel. Exclude Obsidian vault session summary PRs from the report.
 
-4. **GHA Workflow Status** — Check deployment workflow results:
+2. **Open PRs** — Search across all orgs:
    ```bash
-   gh run list --workflow "Full Cluster Deployment (ARO)" --limit 3 --json status,conclusion,createdAt
-   gh run list --workflow "Full Cluster Deployment (ROSA)" --limit 3 --json status,conclusion,createdAt
+   gh search prs --author=RadekCap --state=open \
+     --json repository,number,title,url --limit 20
+   ```
+   Exclude personal forks (RadekCap/capi-tests etc.) unless they have no upstream equivalent.
+
+3. **GHA Workflow Status** — Check deployment workflow results in the capi-tests repo:
+   ```bash
+   gh run list --repo stolostron/capi-tests --workflow "Full Cluster Deployment (ARO)" --limit 3 --json status,conclusion,createdAt
+   gh run list --repo stolostron/capi-tests --workflow "Full Cluster Deployment (ROSA)" --limit 3 --json status,conclusion,createdAt
    ```
 
 ### Jira
@@ -76,9 +84,8 @@ After the report is confirmed by the user, clear the `## Notes` section of this 
 
 ### External PRs
 
-Check for any notable PRs in related repos (e.g., openshift/release):
-- Only include if there's a known PR to check (from conversation context or memory)
-- Don't search speculatively
+The cross-org GitHub search above covers stolostron and openshift orgs automatically.
+If there are additional repos to check (from conversation context or memory), search those explicitly.
 
 ## Output Format
 
@@ -148,7 +155,9 @@ Format the output for **Slack copy-paste** — use Slack emoji syntax and full U
    - If the file is empty or has no notes, skip the Highlights section
 
 3. **Gather GitHub data**
-   - Fetch merged PRs, open PRs, closed issues, workflow status (in parallel)
+   - Search merged PRs across stolostron and openshift orgs (in parallel)
+   - Search open PRs across all orgs
+   - Fetch GHA workflow status from stolostron/capi-tests
 
 4. **Gather Jira data**
    - Read credentials from `credentials.json`
