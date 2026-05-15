@@ -45,12 +45,13 @@ End-to-end workflow: create an isolated worktree, implement a GitHub issue or JI
 
 2b. **[JIRA] Fetch ticket details**
     - Only when input resolved to a JIRA key
-    - Read `credentials.json` from the repo root for the Bearer token (field: `jira.token`)
-    - Fetch ticket details:
+    - Read credentials from `~/.claude/credentials.json` (fields: `jira.email`, `jira.token`)
+    - Fetch ticket details using Basic auth (`-u email:token`):
       ```bash
-      TOKEN=$(cat credentials.json | jq -r '.jira.token')
-      curl -s -H "Authorization: Bearer $TOKEN" \
-        "https://issues.redhat.com/rest/api/2/issue/$KEY?fields=summary,description,status,issuetype,priority,labels,components"
+      EMAIL=$(cat ~/.claude/credentials.json | jq -r '.jira.email')
+      TOKEN=$(cat ~/.claude/credentials.json | jq -r '.jira.token')
+      curl -s -u "$EMAIL:$TOKEN" -H "Content-Type: application/json" \
+        "https://redhat.atlassian.net/rest/api/3/issue/$KEY?fields=summary,description,status,issuetype,priority,labels,components"
       ```
     - If credentials.json is missing or token is empty, show error and exit
     - If fetch fails, show error and exit
@@ -249,9 +250,61 @@ End-to-end workflow: create an isolated worktree, implement a GitHub issue or JI
       )"
       ```
 
-19. **[GitHub only] Post comment on the issue**
-    - Skip for JIRA tickets
-    - Post implementation summary on the GitHub issue using `gh issue comment`
+19. **Update the source issue/ticket with PR link**
+
+    - **GitHub**: Post a comment on the issue with the PR link
+      ```bash
+      gh issue comment <issue-number> --body "PR created: <pr-url>
+
+      <brief summary of changes>"
+      ```
+
+    - **JIRA**: Post a comment AND add the PR as a web link
+      - Read credentials from `~/.claude/credentials.json` (same as Phase 2)
+      - Post comment:
+        ```bash
+        EMAIL=$(cat ~/.claude/credentials.json | jq -r '.jira.email')
+        TOKEN=$(cat ~/.claude/credentials.json | jq -r '.jira.token')
+        curl -s -u "$EMAIL:$TOKEN" -H "Content-Type: application/json" \
+          -X POST "https://redhat.atlassian.net/rest/api/3/issue/<JIRA-KEY>/comment" \
+          -d '{
+            "body": {
+              "type": "doc",
+              "version": 1,
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {"type": "text", "text": "PR created: "},
+                    {"type": "text", "text": "<repo>#<pr-number>", "marks": [{"type": "link", "attrs": {"href": "<pr-url>"}}]}
+                  ]
+                },
+                {
+                  "type": "paragraph",
+                  "content": [
+                    {"type": "text", "text": "<brief summary of changes>"}
+                  ]
+                }
+              ]
+            }
+          }'
+        ```
+      - Add PR as web link (remote link):
+        ```bash
+        curl -s -u "$EMAIL:$TOKEN" -H "Content-Type: application/json" \
+          -X POST "https://redhat.atlassian.net/rest/api/3/issue/<JIRA-KEY>/remotelink" \
+          -d '{
+            "object": {
+              "url": "<pr-url>",
+              "title": "PR #<number>: <pr-title>",
+              "icon": {
+                "url16x16": "https://github.com/favicon.ico",
+                "title": "GitHub"
+              }
+            }
+          }'
+        ```
+      - If either call fails, warn but continue (don't block the workflow)
 
 ### Phase 7: Switch Back
 
@@ -300,7 +353,7 @@ Expected formats:
 ### JIRA Credentials Missing
 ```
 Error: Missing JIRA credentials
-Ensure credentials.json exists at the repo root with: {"jira": {"token": "..."}}
+Ensure ~/.claude/credentials.json exists with: {"jira": {"email": "...", "token": "..."}}
 ```
 
 ### Worktree Creation Fails
