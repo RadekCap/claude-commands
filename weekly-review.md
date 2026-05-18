@@ -71,30 +71,36 @@ Print: "**Inbox complete.** Moving to horizon scan."
 
 **Goal:** Quick overview of where things stand.
 
-1. Read the wiki roadmap page:
+1. Read the CAPZ roadmap (high-level workstream overview):
+   ```bash
+   cat "$OBSIDIAN_VAULT/Knowledge/wiki/capz-roadmap.md" 2>/dev/null
+   ```
+   Walk through each workstream's key question. Flag anything that needs attention this week.
+
+2. Read the ARO-HCP readiness timeline (detailed phases):
    ```bash
    cat "$OBSIDIAN_VAULT/Knowledge/wiki/capz-aro-hcp-public-preview-readiness.md" 2>/dev/null
    ```
 
-2. Check the personal growth plan (if it exists):
+3. Check the personal growth plan (if it exists):
    ```bash
    cat "$OBSIDIAN_VAULT/Knowledge/wiki/personal-growth-plan.md" 2>/dev/null || echo "No personal growth plan found"
    ```
 
-3. Pull active Jira epics:
+4. Pull active Jira epics:
    ```bash
    curl -s -u "$EMAIL:$TOKEN" -H "Content-Type: application/json" \
      "https://redhat.atlassian.net/rest/api/3/search/jql?jql=project=ARO+AND+labels=CAPZ+AND+assignee=5fabb5fdecdae600685b01d6+AND+statusCategory+!=+Done+ORDER+BY+priority+DESC&maxResults=15&fields=key,summary,status,priority"
    ```
 
-4. Present a summary table:
+5. Present a summary table:
    ```
    JIRA          Status          Summary
    ARO-XXXXX     In Progress     <title>
    ARO-YYYYY     To Do           <title>
    ```
 
-5. Ask: "Anything surprising here? Any blockers to flag?"
+6. Ask: "Anything surprising here? Any blockers to flag?"
 
 ### Step 3: Set 1–2 Weekly Priorities (30 minutes)
 
