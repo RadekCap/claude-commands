@@ -271,6 +271,21 @@ Print the horizons and ask one question per level:
 
 Ask: "Which level feels off this week? Or does everything feel aligned?"
 
+#### Career Satisfaction Check
+
+1. Read the career satisfaction reflection page:
+   ```bash
+   cat "$OBSIDIAN_VAULT/Knowledge/wiki/career-satisfaction-reflection.md" 2>/dev/null
+   ```
+2. Walk through each dimension briefly:
+   - Role satisfaction — how did this week feel?
+   - Compensation — any new info or concerns?
+   - Career track — any movement on DEV/QE or promotion?
+   - Team & environment — any friction or highlights?
+   - Long-term alignment — still on track?
+3. Ask: "Overall satisfaction this week, 1–5? Any notes to log?"
+4. If the user provides a rating, append a row to the Reflection Log table in the wiki page.
+
 ### Step 5: Inbox Sweep (30 minutes)
 
 1. Check Nirvana inbox for anything that arrived during the week.
