@@ -182,7 +182,9 @@ Print a banner:
 
 ### Step 1: Backlog Grooming (1.5 hours)
 
-**Goal:** Slowly reduce the 276-item "Next" list.
+**Goal:** Slowly reduce the "Next" list and keep the Jira backlog healthy.
+
+#### Part A: Nirvana "Next" list
 
 1. Fetch the Nirvana "Next" list using `list_tasks` with state: next.
 2. Print the total count: "**Backlog: N items in Next.** Let's groom."
@@ -192,7 +194,21 @@ Print a banner:
    - Which items should move to **Someday**? (update_task with state: someday)
    - Which items need a **due date** or **project assignment**?
 4. After each batch, show the updated count.
-5. After 1.5 hours or when the user says "enough", move on.
+5. After 1 hour or when the user says "enough", move to Part B.
+
+#### Part B: Jira backlog review
+
+1. Pull all assigned Jira tickets (not just active — include To Do):
+   ```bash
+   curl -s -u "$EMAIL:$TOKEN" -H "Content-Type: application/json" \
+     "https://redhat.atlassian.net/rest/api/3/search/jql?jql=project=ARO+AND+labels=CAPZ+AND+assignee=5fabb5fdecdae600685b01d6+AND+statusCategory+!=+Done+ORDER+BY+updated+ASC&maxResults=30&fields=key,summary,status,priority,updated"
+   ```
+2. Show tickets sorted by last updated (oldest first).
+3. For each ticket, ask:
+   - Still relevant? (keep / close / reassign)
+   - Priority correct?
+   - Any that should be broken down or merged?
+4. Flag tickets not updated in 30+ days as candidates for closure.
 
 ### Step 2: Week in Review (1 hour)
 
