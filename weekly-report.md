@@ -65,13 +65,13 @@ TOKEN=$(python3 -c "import json; d=json.load(open('credentials.json')); print(d[
 1. **Resolved JIRAs** — Issues resolved in the date range:
    ```bash
    curl -s -u "$EMAIL:$TOKEN" -H "Content-Type: application/json" \
-     "https://redhat.atlassian.net/rest/api/3/search/jql?jql=project=ARO+AND+labels=CAPZ+AND+statusCategory=Done+AND+resolved+%3E%3D+%22$START_DATE%22+ORDER+BY+resolved+DESC&maxResults=30&fields=key,summary,status,resolution"
+     "https://redhat.atlassian.net/rest/api/3/search/jql?jql=project=ARO+AND+component=%22aro-hcp-capz%22+AND+statusCategory=Done+AND+resolved+%3E%3D+%22$START_DATE%22+ORDER+BY+resolved+DESC&maxResults=30&fields=key,summary,status,resolution"
    ```
 
 2. **Open/In-Progress JIRAs** — Active issues:
    ```bash
    curl -s -u "$EMAIL:$TOKEN" -H "Content-Type: application/json" \
-     "https://redhat.atlassian.net/rest/api/3/search/jql?jql=project=ARO+AND+labels=CAPZ+AND+assignee=5fabb5fdecdae600685b01d6+AND+statusCategory+!=+Done+ORDER+BY+priority+DESC&maxResults=30&fields=key,summary,status"
+     "https://redhat.atlassian.net/rest/api/3/search/jql?jql=project=ARO+AND+component=%22aro-hcp-capz%22+AND+assignee=5fabb5fdecdae600685b01d6+AND+statusCategory+!=+Done+ORDER+BY+priority+DESC&maxResults=30&fields=key,summary,status"
    ```
 
 Note: Individual issue GET still works on v2 (`/rest/api/2/issue/ARO-XXXXX`). Only JQL search requires v3.
@@ -104,24 +104,24 @@ Format the output for **Slack copy-paste** — use Slack emoji syntax and full U
 - Full Cluster Deployment (ROSA) — :white_check_mark: success
 
 *Merged PRs*
-- https://github.com/org/repo/pull/NNN — title
-- https://github.com/org/repo/pull/NNN — title
+- <https://github.com/org/repo/pull/NNN|repo#NNN> — title
+- <https://github.com/org/repo/pull/NNN|repo#NNN> — title
 
 *Closed JIRAs*
-- ARO-XXXXX — title
-- ARO-XXXXX — title
+- <https://issues.redhat.com/browse/ARO-XXXXX|ARO-XXXXX> — title
+- <https://issues.redhat.com/browse/ARO-XXXXX|ARO-XXXXX> — title
 
 *In progress* :soon:
 
 *<Current focus area>* — brief description
 
 *Open PRs*
-- https://github.com/org/repo/pull/NNN — title
-- https://github.com/org/repo/pull/NNN — title
+- <https://github.com/org/repo/pull/NNN|repo#NNN> — title
+- <https://github.com/org/repo/pull/NNN|repo#NNN> — title
 
 *JIRAs In Progress*
-- ARO-XXXXX — title
-- ARO-XXXXX — title
+- <https://issues.redhat.com/browse/ARO-XXXXX|ARO-XXXXX> — title
+- <https://issues.redhat.com/browse/ARO-XXXXX|ARO-XXXXX> — title
 
 *Next* :soon:
 
@@ -134,13 +134,14 @@ Format the output for **Slack copy-paste** — use Slack emoji syntax and full U
 
 ## Formatting Rules
 
-1. **Use full URLs** for PRs — `https://github.com/org/repo/pull/NNN` not `[#NNN](url)`. Slack renders these as clickable links, and they survive copy-paste.
-2. **Use Slack bold** — `*bold*` not `**bold**`
-3. **Use Slack emoji** — `:white_check_mark:`, `:soon:`, `:warning:`
-4. **Group dependabot/automated PRs** — list them on one line with all URLs comma-separated
-5. **Separate manual PRs** — one per line with description
-6. **Keep descriptions short** — one line per item
-7. **Highlight key achievements** — lead with the most important accomplishment
+1. **Use Slack named links** for PRs — `<https://github.com/org/repo/pull/NNN|repo#NNN>` (e.g., `<https://github.com/stolostron/capi-tests/pull/712|capi-tests#712>`). This renders as a clickable label.
+2. **Use Slack named links for JIRAs** — `<https://issues.redhat.com/browse/ARO-XXXXX|ARO-XXXXX>` (renders as clickable "ARO-XXXXX").
+3. **Use Slack bold** — `*bold*` not `**bold**`
+4. **Use Slack emoji** — `:white_check_mark:`, `:soon:`, `:warning:`
+5. **Group dependabot/automated PRs** — list them on one line with all URLs comma-separated
+6. **Separate manual PRs** — one per line with description
+7. **Keep descriptions short** — one line per item
+8. **Highlight key achievements** — lead with the most important accomplishment
 
 ## Steps
 
@@ -154,27 +155,48 @@ Format the output for **Slack copy-paste** — use Slack emoji syntax and full U
    - These become the *Highlights* section at the top of the report
    - If the file is empty or has no notes, skip the Highlights section
 
-3. **Gather GitHub data**
+3. **Read previous report for dedup**
+   - Find the most recent file in `Diary/Weekly/` (sorted by filename)
+   - Read its content and extract: Highlights, Done items (PRs, JIRAs), In Progress items
+   - Use this to detect duplicates in step 6 — if a highlight, PR, or JIRA already appeared in the previous report, flag it and exclude it from the new report
+   - If items from `weekly-notes.md` already appeared in the previous report's Highlights, exclude them and notify the user (e.g., "Excluded duplicate highlight: ...")
+
+4. **Gather GitHub data**
    - Search merged PRs across stolostron and openshift orgs (in parallel)
    - Search open PRs across all orgs
    - Fetch GHA workflow status from stolostron/capi-tests
 
-4. **Gather Jira data**
+5. **Gather Jira data**
    - Read credentials from `credentials.json`
    - Fetch resolved and open issues via v3 search API
 
-5. **Check previous status** (if available in memory)
+6. **Check previous status** (from step 3)
    - Compare with previous "Next" items to track continuity
    - Carry forward items that are still in progress
 
-6. **Compose the report**
+7. **Compose the report**
    - Follow the output format above — lead with Highlights from weekly notes
+   - Exclude any items flagged as duplicates in step 3
    - Print the report to the terminal
    - Wait for user confirmation or edits before considering done
 
-7. **Clear weekly notes**
+8. **Clear weekly notes**
    - After the user confirms the report, clear the `## Notes` section in `050 Inbox/weekly-notes.md`
    - Keep the frontmatter and description header intact
+
+9. **Remind to save report**
+   - After the user confirms the report, remind them:
+     "Save this report to `Diary/Weekly/YYYY-MM-DD Weekly Summary.md`? (This keeps history for future dedup.)"
+   - If the user confirms, save the report as a markdown file with frontmatter:
+     ```yaml
+     ---
+     title: "Weekly Summary: <date range>"
+     type: source
+     tags: [weekly-summary, capz, capi-tests]
+     created: YYYY-MM-DD
+     ---
+     ```
+   - Convert the Slack format to markdown for the saved file (e.g., `*bold*` → `**bold**`, Slack emoji → text equivalents or remove)
 
 ## Tips
 
