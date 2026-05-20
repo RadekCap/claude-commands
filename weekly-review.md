@@ -102,9 +102,21 @@ Print: "**Inbox complete.** Moving to horizon scan."
 
 6. Ask: "Anything surprising here? Any blockers to flag?"
 
+### Step 2.5: Target State Gap Analysis (15 minutes)
+
+**Goal:** Compare the target state with reality — gaps become weekly priorities.
+
+1. Read the CAPZ target state page:
+   ```bash
+   cat "$OBSIDIAN_VAULT/Knowledge/wiki/capz-target-state.md" 2>/dev/null
+   ```
+2. For each dimension, ask: "Is current state matching the target?"
+3. List the gaps — these feed directly into Step 3.
+4. Ask: "Which gaps are the most urgent this week?"
+
 ### Step 3: Set 1–2 Weekly Priorities (30 minutes)
 
-**Goal:** Leave the review with clear focus. These MUST connect to ARO-HCP.
+**Goal:** Leave the review with clear focus. Priorities come from the target state gaps above.
 
 1. Print:
    ```
@@ -112,7 +124,8 @@ Print: "**Inbox complete.** Moving to horizon scan."
    Your Q2 goal: ARO-HCP CAPZ test integration as a gating feature.
    Deadline: end of Q2 2026.
 
-   What are your 1–2 priorities for this week?
+   Based on the target state gaps above,
+   what are your 1–2 priorities for this week?
    Each must map to a Jira ticket.
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    ```
