@@ -222,7 +222,7 @@ Automatically analyze a GitHub issue or JIRA ticket, implement the required chan
         ## Summary
         Fixes authentication timeout as described in ACM-12345
 
-        JIRA: https://issues.redhat.com/browse/ACM-12345
+        JIRA: https://redhat.atlassian.net/browse/ACM-12345
 
         ## Problem
         <Describe the problem from the JIRA ticket>
@@ -245,7 +245,64 @@ Automatically analyze a GitHub issue or JIRA ticket, implement the required chan
         )"
         ```
 
-14. **[GitHub only] Post comment on the issue explaining the implementation**
+14. **[JIRA only] Add PR as web link on JIRA ticket**
+    - **Skip this step entirely for GitHub issues**
+    - After creating the PR, add it as a remote link (web link) on the JIRA ticket
+    - Read credentials from `credentials.json` at the repo root
+    - Use the Jira Remote Link API:
+      ```bash
+      EMAIL=$(jq -r '.jira.email' credentials.json)
+      TOKEN=$(jq -r '.jira.token' credentials.json)
+      PR_URL="<the PR URL from step 13>"
+      PR_TITLE="<the PR title from step 13>"
+
+      curl -s -w "\n%{http_code}" -u "$EMAIL:$TOKEN" \
+        -H "Content-Type: application/json" \
+        -X POST "https://redhat.atlassian.net/rest/api/2/issue/<JIRA-KEY>/remotelink" \
+        -d "$(cat <<LINK_EOF
+      {
+        "object": {
+          "url": "$PR_URL",
+          "title": "$PR_TITLE",
+          "icon": {
+            "url16x16": "https://github.com/favicon.ico",
+            "title": "GitHub Pull Request"
+          }
+        }
+      }
+      LINK_EOF
+      )"
+      ```
+    - Verify the response (HTTP 201 = success)
+    - If credentials are missing or the API call fails, log a warning but do not block the workflow
+
+15. **[JIRA only] Transition ticket to Review**
+    - **Skip this step entirely for GitHub issues**
+    - After creating the PR and adding the web link, move the JIRA ticket to "Review" status
+    - Read credentials from `credentials.json` at the repo root
+    - First, fetch available transitions to find the correct transition ID:
+      ```bash
+      EMAIL=$(jq -r '.jira.email' credentials.json)
+      TOKEN=$(jq -r '.jira.token' credentials.json)
+
+      curl -s -u "$EMAIL:$TOKEN" \
+        "https://redhat.atlassian.net/rest/api/2/issue/<JIRA-KEY>/transitions" | jq '.transitions[] | {id, name}'
+      ```
+    - Find the transition whose name contains "Review" (case-insensitive match)
+    - Execute the transition:
+      ```bash
+      TRANSITION_ID="<id from above>"
+
+      curl -s -w "\n%{http_code}" -u "$EMAIL:$TOKEN" \
+        -H "Content-Type: application/json" \
+        -X POST "https://redhat.atlassian.net/rest/api/2/issue/<JIRA-KEY>/transitions" \
+        -d "{\"transition\": {\"id\": \"$TRANSITION_ID\"}}"
+      ```
+    - Verify the response (HTTP 204 = success)
+    - If no "Review" transition is available (ticket may already be in Review, or the workflow doesn't have one), log a warning but do not block the workflow
+    - If credentials are missing or the API call fails, log a warning but do not block the workflow
+
+16. **[GitHub only] Post comment on the issue explaining the implementation**
     - **Skip this step entirely for JIRA tickets** (there is no GitHub issue to comment on)
     - After creating the PR, post a comment on the original GitHub issue
     - The comment should explain what was implemented, not just link to the PR
@@ -280,10 +337,10 @@ Automatically analyze a GitHub issue or JIRA ticket, implement the required chan
       )"
       ```
 
-15. **Provide summary to user**
+17. **Provide summary to user**
     - Display PR URL
     - **GitHub**: Display issue comment confirmation and link to issue
-    - **JIRA**: Display link to JIRA ticket (`https://issues.redhat.com/browse/<JIRA-KEY>`)
+    - **JIRA**: Display link to JIRA ticket (`https://redhat.atlassian.net/browse/<JIRA-KEY>`), confirm web link was added, and confirm ticket was moved to Review
     - List files changed
     - Show test results
     - Remind user that CI will run automatically
@@ -357,6 +414,8 @@ After completing implementation, verify:
 - [ ] PR description includes "Fixes #<issue-number>" (GitHub) or JIRA link (JIRA)
 - [ ] Branch pushed to remote
 - [ ] PR created successfully
+- [ ] [JIRA only] PR added as web link on JIRA ticket
+- [ ] [JIRA only] Ticket transitioned to Review
 - [ ] [GitHub only] Issue comment posted explaining the implementation
 
 ## Tips for Success
