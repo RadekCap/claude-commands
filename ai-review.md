@@ -11,53 +11,77 @@ Supersedes the former `/coderabbit-review` command.
 ## Usage
 
 ```
-/ai-review [pr-number]
+/ai-review [pr-number-or-url]
 ```
 
-If no PR number is provided, auto-detects the PR for the current branch.
+- **PR URL** (any repo): `/ai-review https://github.com/stolostron/azure-service-operator/pull/379`
+- **PR number** (current repo): `/ai-review 42`
+- **No argument**: auto-detect PR for the current branch
 
-**Example**: `/ai-review 42` or just `/ai-review`
+Renames this chat session to `#<number> · <PR title>` (truncated to 200 characters) before starting the pipeline.
+
+**Examples**: `/ai-review 42`, `/ai-review https://github.com/org/repo/pull/123`, or `/ai-review`
 
 ## Instructions
 
+**Scope for all steps:** After Step 1, `OWNER`, `REPO`, `PR_NUMBER`, and `PR_REF` are set. Export `GH_REPO="${OWNER}/${REPO}"` so every `gh pr …` and `gh api repos/$OWNER/$REPO/…` command targets the PR's repository (required when the workspace checkout is a different repo).
+
 ### Step 1: Determine PR and Repository Context
 
-1. Extract repository information:
-   ```bash
-   REPO_INFO=$(gh repo view --json owner,name)
-   OWNER=$(echo "$REPO_INFO" | jq -r '.owner.login')
-   REPO=$(echo "$REPO_INFO" | jq -r '.name')
-   ```
-
-2. Determine PR number:
-   - If argument provided: use `$ARGUMENTS` as the PR number
-   - If no argument: auto-detect from current branch:
+1. **Parse input** (`PR_INPUT` = trimmed `$ARGUMENTS`):
+   - **GitHub PR URL** — matches `https://github.com/<owner>/<repo>/pull/<number>` (optional trailing slash or fragment):
      ```bash
-     PR_NUMBER=$(gh pr view --json number -q '.number' 2>/dev/null)
+     PR_REF="$PR_INPUT"
+     PR_META=$(gh pr view "$PR_REF" --json number,title,state,baseRepository)
+     PR_NUMBER=$(echo "$PR_META" | jq -r '.number')
+     PR_TITLE=$(echo "$PR_META" | jq -r '.title')
+     OWNER=$(echo "$PR_META" | jq -r '.baseRepository.owner.login')
+     REPO=$(echo "$PR_META" | jq -r '.baseRepository.name')
+     export GH_REPO="${OWNER}/${REPO}"
      ```
-   - If no PR exists for the current branch, ask the user:
-     - "No PR found for the current branch. Would you like to:"
-       - Option 1: Create a new PR (follow `.github/PULL_REQUEST_TEMPLATE.md`)
-       - Option 2: Provide a PR number manually
-       - Option 3: Cancel
-   - If creating a PR, push the current branch first if needed:
+   - **PR number only** (digits) — use the current repository:
      ```bash
-     BRANCH=$(git branch --show-current)
-     git push -u origin "$BRANCH"
+     REPO_INFO=$(gh repo view --json owner,name)
+     OWNER=$(echo "$REPO_INFO" | jq -r '.owner.login')
+     REPO=$(echo "$REPO_INFO" | jq -r '.name')
+     export GH_REPO="${OWNER}/${REPO}"
+     PR_NUMBER="$PR_INPUT"
+     PR_REF="$PR_NUMBER"
+     PR_TITLE=$(gh pr view "$PR_REF" --json title -q '.title')
      ```
-     Then create the PR following the repository's PR template.
+   - **No argument** — auto-detect from the current branch in the current repo:
+     ```bash
+     REPO_INFO=$(gh repo view --json owner,name)
+     OWNER=$(echo "$REPO_INFO" | jq -r '.owner.login')
+     REPO=$(echo "$REPO_INFO" | jq -r '.name')
+     export GH_REPO="${OWNER}/${REPO}"
+     PR_NUMBER=$(gh pr view --json number -q '.number' 2>/dev/null) || true
+     ```
+     If `PR_NUMBER` is empty, ask the user:
+     - Option 1: Create a new PR (follow `.github/PULL_REQUEST_TEMPLATE.md`)
+     - Option 2: Provide a PR number or URL manually
+     - Option 3: Cancel
+     If creating a PR, push the current branch first if needed, then create the PR.
+     Once `PR_NUMBER` is known: `PR_REF="$PR_NUMBER"` and `PR_TITLE=$(gh pr view "$PR_REF" --json title -q '.title')`.
 
-3. Verify PR exists and is open:
+2. **Rename this chat session** (Cursor / Agents Window with app control):
+   - Build title: `#${PR_NUMBER} · ${PR_TITLE}`
+   - Truncate to **200 characters** (rename limit).
+   - Call the rename-chat action on the **current conversation** with that title.
+   - If rename is unavailable (e.g. cloud automation run without IDE control), log the intended title and continue.
+
+3. **Verify PR exists and is open:**
    ```bash
-   PR_STATE=$(gh pr view "$PR_NUMBER" --json state -q '.state')
+   PR_STATE=$(gh pr view "$PR_REF" --json state -q '.state')
    ```
    - If not OPEN, warn and ask if user wants to proceed
 
-4. Display context:
+4. **Display context:**
    ```
    Repository: $OWNER/$REPO
    Pull Request: #$PR_NUMBER
-   Branch: <current branch>
+   Title: $PR_TITLE
+   Branch: <current branch if applicable>
    ```
 
 ### Step 2: Self-Review
