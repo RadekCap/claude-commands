@@ -41,7 +41,7 @@ Run /weekly-review open (Monday) or /weekly-review close (Friday).
 
 ### 3. CAPZ Status
 
-Run the full `/capz-status-check` inline — execute all steps from that skill (GHA workflows, issues, PRs, security alerts).
+Run `/morning-capz-status-check` inline — executes the full CAPZ status check and saves results to today's Obsidian daily note.
 
 Ask: "Any red flags to address before starting your day?"
 
