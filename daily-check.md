@@ -39,31 +39,9 @@ Today is $DAY_NAME — time for your full weekly review.
 Run /weekly-review open (Monday) or /weekly-review close (Friday).
 ```
 
-### 3. Morning CAPZ Status
+### 3. CAPZ Status
 
-Check the state of CAPZ CI/CD pipelines. Print:
-
-```
-━━━ Morning CAPZ Status ━━━━━━━━━━━━━━━━━━━━━━━
-```
-
-Provide links for manual check:
-```
-  - [ ] OpenShift CI:  https://prow.ci.openshift.org/?job=periodic-ci-stolostron-capi-tests-*
-  - [ ] GHA Management cluster: https://github.com/stolostron/capi-tests/actions/workflows/management-cluster-aro.yml
-  - [ ] GHA Workload cluster:   https://github.com/stolostron/capi-tests/actions/workflows/workload-cluster-aro.yml
-  - [ ] ACM Jenkins:   https://jenkins-csb-rhacm-tests.dno.corp.redhat.com/job/CI-Jobs/job/capz_tests/
-  - [ ] Stale Resources: https://github.com/stolostron/capi-tests/actions/workflows/stale-resources.yml
-```
-
-Also fetch the latest GHA workflow runs programmatically:
-```bash
-gh run list --repo stolostron/capi-tests --workflow "management-cluster-aro.yml" --limit 1 --json status,conclusion,createdAt
-gh run list --repo stolostron/capi-tests --workflow "workload-cluster-aro.yml" --limit 1 --json status,conclusion,createdAt
-gh run list --repo stolostron/capi-tests --workflow "stale-resources.yml" --limit 1 --json status,conclusion,createdAt
-```
-
-Print a summary: ✅ passing / ❌ failing / ⏳ running for each.
+Run the full `/capz-status-check` inline — execute all steps from that skill (GHA workflows, issues, PRs, security alerts).
 
 Ask: "Any red flags to address before starting your day?"
 
