@@ -42,7 +42,6 @@ gh run list --repo stolostron/capi-tests --workflow "workload-cluster-aro-backpl
 gh run list --repo stolostron/capi-tests --workflow "workload-cluster-aro-backplane-5.0.yml" --limit 1 --json status,conclusion,createdAt,name
 gh run list --repo stolostron/capi-tests --workflow "workload-cluster-aro-backplane-5.1.yml" --limit 1 --json status,conclusion,createdAt,name
 gh run list --repo stolostron/capi-tests --workflow "stale-resources.yml" --limit 1 --json status,conclusion,createdAt,name
-gh run list --repo stolostron/capi-tests --workflow "build-prow-image.yml" --limit 1 --json status,conclusion,createdAt,name
 gh run list --repo stolostron/capi-tests --workflow "security-nancy.yml" --limit 1 --json status,conclusion,createdAt,name
 gh run list --repo stolostron/capi-tests --workflow "security-govulncheck.yml" --limit 1 --json status,conclusion,createdAt,name
 gh run list --repo stolostron/capi-tests --workflow "security-trivy.yml" --limit 1 --json status,conclusion,createdAt,name
@@ -84,7 +83,6 @@ Note: Dependency Graph is a dynamic workflow — check via GitHub UI:
 gh run list --repo stolostron/azure-service-operator --workflow "codeql.yml" --limit 1 --json status,conclusion,createdAt,name
 gh run list --repo stolostron/azure-service-operator --workflow "ffwd-branch.yaml" --limit 1 --json status,conclusion,createdAt,name
 gh run list --repo stolostron/azure-service-operator --workflow "pr-capi-tests.yaml" --limit 1 --json status,conclusion,createdAt,name
-gh run list --repo stolostron/azure-service-operator --workflow "pr-validation-docs.yml" --limit 1 --json status,conclusion,createdAt,name
 gh run list --repo stolostron/azure-service-operator --workflow "pr-validation-fork.yml" --limit 1 --json status,conclusion,createdAt,name
 gh run list --repo stolostron/azure-service-operator --workflow "pr-validation.yml" --limit 1 --json status,conclusion,createdAt,name
 gh run list --repo stolostron/azure-service-operator --workflow "renovate.yaml" --limit 1 --json status,conclusion,createdAt,name
