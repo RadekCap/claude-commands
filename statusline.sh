@@ -1,6 +1,10 @@
 #!/bin/bash
 # Claude Code status line script
 # Shows: [Model] Directory | Branch | Context% | Cost | Learning Progress
+#
+# active-plan format (one entry per line):
+#   planname.md          → looked up in ~/.claude/plans/
+#   path:relative/path   → looked up relative to project dir
 
 input=$(cat)
 
@@ -33,30 +37,47 @@ if [ "$CTX_PCT" != "0" ] && [ -n "$CTX_PCT" ]; then
     CTX_FMT="ctx:${CTX_PCT}%"
 fi
 
-# Learning progress from project's active plan
+# Learning progress — supports multiple plans
 LEARN_FMT=""
-PLAN_FILE=""
 ACTIVE_PLAN_MARKER="$PROJECT_DIR/.claude/active-plan"
 if [ -f "$ACTIVE_PLAN_MARKER" ]; then
-    PLAN_NAME=$(cat "$ACTIVE_PLAN_MARKER" 2>/dev/null | tr -d '[:space:]')
-    [ -n "$PLAN_NAME" ] && PLAN_FILE="$HOME/.claude/plans/$PLAN_NAME"
-    [ ! -f "$PLAN_FILE" ] && PLAN_FILE=""
-fi
-if [ -n "$PLAN_FILE" ]; then
-        DONE=$(grep -c '^\- \[x\]' "$PLAN_FILE" 2>/dev/null)
+    LEARN_PARTS=()
+    while IFS= read -r line || [ -n "$line" ]; do
+        line=$(echo "$line" | tr -d '[:space:]')
+        [ -z "$line" ] && continue
+
+        # Resolve plan file path
+        if [[ "$line" == path:* ]]; then
+            PLAN_FILE="$PROJECT_DIR/${line#path:}"
+        else
+            PLAN_FILE="$HOME/.claude/plans/$line"
+        fi
+        [ ! -f "$PLAN_FILE" ] && continue
+
+        DONE=$(grep -c '^ *- \[x\]' "$PLAN_FILE" 2>/dev/null)
         [ -z "$DONE" ] && DONE=0
-        TODO=$(grep -c '^\- \[ \]' "$PLAN_FILE" 2>/dev/null)
+        TODO=$(grep -c '^ *- \[ \]' "$PLAN_FILE" 2>/dev/null)
         [ -z "$TODO" ] && TODO=0
         TOTAL=$((DONE + TODO))
-        if [ "$TOTAL" -gt 0 ]; then
-            CURRENT=$(grep '^\- \[ \]' "$PLAN_FILE" 2>/dev/null | head -1 | sed 's/^- \[ \] \*\*//' | sed 's/\*\*.*//' | cut -c1-20)
-            FILLED=$((DONE * 10 / TOTAL))
-            BAR=""
-            for i in $(seq 1 10); do
-                [ "$i" -le "$FILLED" ] && BAR="${BAR}▓" || BAR="${BAR}░"
-            done
-            LEARN_FMT="[${DONE}/${TOTAL}] ${BAR} ▶ ${CURRENT}"
+        [ "$TOTAL" -eq 0 ] && continue
+
+        CURRENT=$(grep '^ *- \[ \]' "$PLAN_FILE" 2>/dev/null | head -1 | sed 's/^ *- \[ \] \*\*//' | sed 's/\*\*.*//' | sed 's/^ *- \[ \] //' | cut -c1-20)
+        FILLED=$((DONE * 10 / TOTAL))
+        BAR=""
+        for i in $(seq 1 10); do
+            [ "$i" -le "$FILLED" ] && BAR="${BAR}▓" || BAR="${BAR}░"
+        done
+        LEARN_PARTS+=("[${DONE}/${TOTAL}] ${BAR} ▶ ${CURRENT}")
+    done < "$ACTIVE_PLAN_MARKER"
+
+    # Join all plan progress with separator
+    for i in "${!LEARN_PARTS[@]}"; do
+        if [ "$i" -eq 0 ]; then
+            LEARN_FMT="${LEARN_PARTS[$i]}"
+        else
+            LEARN_FMT="$LEARN_FMT ┊ ${LEARN_PARTS[$i]}"
         fi
+    done
 fi
 
 # Build output
