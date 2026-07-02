@@ -74,6 +74,7 @@ Summarize everything done in the current Claude Code session and save as an Obsi
      - <HH:MM> [[<YYYY-MM-DD> <HH-MM> Session - <short description>|<project>: <short description>]]
      ```
    - **Sort entries chronologically**: after adding the new link, sort all entries under `## AI Sessions` by their `HH:MM` prefix (oldest first)
+   - **Update session count in heading**: count all `- ` entries under the section and update the heading to `## AI Sessions (<count>)`
 
 5. **Auto-commit and push to the Obsidian repo**
    After writing the files, run the following git workflow in the Obsidian repo directory:
