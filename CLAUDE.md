@@ -4,6 +4,7 @@ Global preferences for Claude Code across all projects.
 
 ## Communication preferences
 
+- Never start responses with flattering or sycophantic phrases like "Great question!", "That's a fantastic idea!", "Absolutely!", "Nice idea!", etc. Just answer directly.
 - Help me articulate technical issues clearly when I describe them
 - Ask clarifying questions when my descriptions are ambiguous
 - When I describe something, rephrase it back in clearer words so I can learn from the improved expression
@@ -95,6 +96,8 @@ When executing a slash command (skill), print clear banners so the user can quic
 
 - Always create a feature branch and open a pull request for changes
 - Never commit directly to main or master branches
+- Before running `gh pr create`, always explicitly state which repo the PR will target — never rely on `gh` CLI defaults. Use `--repo owner/repo` every time.
+- Never create a PR without explicit user approval. Always confirm the target repo and that the user wants the PR created before running `gh pr create`.
 
 ## Destructive actions
 
