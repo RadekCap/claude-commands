@@ -52,7 +52,14 @@ gh run list --repo stolostron/capi-tests --workflow "security-scorecard.yml" --l
 gh run list --repo stolostron/capi-tests --workflow "security-fuzz.yml" --limit 1 --json status,conclusion,createdAt,name
 ```
 
-Note: Copilot code review, Dependency Graph, CodeQL, and Dependabot Updates are dynamic workflows — check via GitHub UI links instead:
+Also check Dependabot update job results (dynamic workflow, not queryable via `gh run list`):
+```bash
+gh api "repos/stolostron/capi-tests/actions/runs?per_page=10&event=dynamic" \
+  --jq '[.workflow_runs[] | select(.name | startswith("docker"))] | first | {name, conclusion, created_at}'
+```
+Show result as `Dependabot Updates (docker)` row in the table. A `failure` conclusion means the Docker updater failed (e.g. private registry auth error).
+
+Note: Copilot code review and Dependency Graph are dynamic workflows with no programmatic access — check via GitHub UI:
 ```
   - [ ] https://github.com/stolostron/capi-tests/actions
 ```
@@ -91,7 +98,14 @@ gh run list --repo stolostron/azure-service-operator --workflow "scorecards.yml"
 gh run list --repo stolostron/azure-service-operator --workflow "weekly-security-scan.yaml" --limit 1 --json status,conclusion,createdAt,name
 ```
 
-Note: Dependabot Updates, Dependency Graph, and dynamic CodeQL are dynamic workflows — check via GitHub UI:
+Also check Dependabot update job results:
+```bash
+gh api "repos/stolostron/azure-service-operator/actions/runs?per_page=10&event=dynamic" \
+  --jq '[.workflow_runs[] | select(.name | startswith("docker"))] | first | {name, conclusion, created_at}'
+```
+Show result as `Dependabot Updates (docker)` row in the table.
+
+Note: Dependency Graph and dynamic CodeQL are dynamic workflows with no programmatic access — check via GitHub UI:
 ```
   - [ ] https://github.com/stolostron/azure-service-operator/actions
 ```
