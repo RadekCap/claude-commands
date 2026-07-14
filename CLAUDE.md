@@ -154,6 +154,42 @@ JSON snippet for every `fields` block:
 "fixVersions": [{"id": "105810"}]
 ```
 
+### Safety rules
+
+**Duplicate prevention (CRITICAL):**
+- Before every write operation, review the conversation history to check if the same action was already performed (comments, labels, issue creation, field updates).
+- When in doubt, ask the user rather than risk creating duplicates — duplicates in Jira are hard to clean up.
+- If a POST call appears to fail, search for the resource before retrying to avoid duplicates.
+- Never blindly retry a write operation — verify current state first.
+
+**Write operations:**
+- Always use `curl -s -w "\n%{http_code}"` with Basic auth for Jira write calls — never pipe through formatters like `python3 -m json.tool` that can mask the HTTP status code.
+
+**Destructive actions:**
+- NEVER delete Jira issues — use close or `/handle-jira-duplicates` instead.
+- Never modify Jira issues without explicit user confirmation.
+- When the user reports a problem (duplicates, wrong data), report findings and suggest actions — do not autonomously fix.
+- Applies to all mutations: comments, status transitions, field updates.
+
+**Subtask limitations:**
+- Jira REST API does NOT support re-parenting subtasks via PUT (returns 204 but silently ignores the change).
+- Jira REST API does NOT support converting subtasks to tasks (requires UI: Actions > Convert to Issue).
+- To move subtasks: create new ones under the target parent, then clean up old ones.
+
+### Visibility
+
+Always check the issue's visibility before making changes. Use the same visibility level for comments, sub-tasks, and field updates. For API calls, include:
+
+```json
+"visibility": {"type": "group", "value": "<group-from-issue>"}
+```
+
+Common groups: `"Red Hat Employee"`, `"Red Hat Partner"`.
+
+### Jira URL handling
+
+When the user shares a Jira URL (`https://redhat.atlassian.net/browse/ARO-XXXXX`), always fetch it via the Jira REST API using credentials from `credentials.json`. Never use WebFetch for Jira URLs — it cannot authenticate and will fail.
+
 ## Destructive actions
 
 - Never delete Azure resources without explicit confirmation
