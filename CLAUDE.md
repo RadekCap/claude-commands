@@ -119,6 +119,7 @@ Rules:
 - Default project: `ARO`, default component: `aro-hcp-capz`
 - URL-encode JQL query parameters.
 - Never guess credentials or try alternative auth methods — if credentials.json is missing, ask the user.
+- Always add `-L` to curl commands (the instance may redirect).
 
 ## Jira issue creation rules
 
@@ -185,6 +186,26 @@ Always check the issue's visibility before making changes. Use the same visibili
 ```
 
 Common groups: `"Red Hat Employee"`, `"Red Hat Partner"`.
+
+### Labels
+
+Never add `labels` to Jira issues. The team stopped using them. Omit the field entirely when creating or updating issues.
+
+### Transition IDs
+
+Do NOT guess transition IDs — the numbering is not intuitive. Always use these exact values for the ARO project:
+
+| ID | Status |
+|----|--------|
+| 11 | New |
+| 21 | Refinement |
+| 31 | Backlog |
+| 41 | To Do |
+| 51 | In Progress |
+| 61 | Review |
+| 71 | Closed |
+
+If unsure, fetch available transitions first via `GET /rest/api/3/issue/{KEY}/transitions` before posting.
 
 ### Jira URL handling
 
