@@ -935,6 +935,23 @@ After all findings are processed, update the PR description to accurately reflec
 - **Reply Posted**: Yes
 - **Thread Resolved**: Yes / Failed / N/A (Qodo — no resolve API)
 
+### Step 9: Intent vs Implementation Check
+
+After all automated findings are processed, print this reminder:
+
+```
+━━━ Manual check before you're done ━━━━━━━━━━━━━
+
+Intent vs Implementation:
+  1. Read the PR description / commit message.
+  2. Read the diff — does the code do what was described?
+     Common gaps: scope creep, missing edge cases,
+     description says X but code does Y.
+  3. If they don't match: comment on the PR or ask the author.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
 ## Permissions Required
 
 - Repository > Contents: Read and Write
