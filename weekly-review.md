@@ -310,6 +310,16 @@ Ask: "Which level feels off this week? Or does everything feel aligned?"
 1. Check Nirvana inbox for anything that arrived during the week.
 2. Process the same way as Monday Step 1 (but expect fewer items).
 
+### Step 5.5: Process "For Weekly Review" Project
+
+1. Fetch all tasks in the "For weekly review" Nirvana project (ID: 92E8F633-6E80-4AA2-84F2-45BE91CF1EBA) using `list_tasks`.
+2. For each task, show the item and ask:
+   - **Done** — complete it
+   - **Discuss** — talk through it now
+   - **Keep** — leave it for a future review
+   - **Trash** — no longer relevant
+3. This project is the holding area for topics and questions that surfaced during the week and need dedicated review time.
+
 Print:
 ```
 ━━━ ✔ Weekly Review — Closing complete ━━━━━━━━━
