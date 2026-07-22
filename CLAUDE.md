@@ -133,6 +133,26 @@ These rules apply when creating **any** Jira issue, regardless of project, sourc
 - If the source is a verbal or informal request: write a short description capturing the context before creating.
 - If there is genuinely nothing to write: ask the user for content — never silently leave the description empty.
 
+### Description structure (by issue type)
+
+See full guidelines: [How We Use JIRA in ARO HCP](https://docs.google.com/document/d/1jLwHt00p5EyW4hYIUlDleQGh0K96UfZrmcp-BJ3BmaM)
+
+**Epics** — must include all four sections:
+- **Overview**: what this Epic is about and why it exists
+- **Acceptance Criteria**: what "done" looks like
+- **Definition of Done**: technical requirements (tests passing, docs, code rolled out)
+- **References**: links to related tickets, PRs, docs
+
+**Stories/Tasks/Bugs** — must include:
+- What the work is and why it matters — written for someone who doesn't know you personally
+- Link any related PRs or commits in a comment once work starts
+
+### Parent Epic (mandatory for Stories/Tasks/Bugs)
+
+Always set the Epic Link field when creating a Story, Task, or Bug.
+Never create standalone tickets without a parent Epic — they become orphans invisible in the plan view.
+See full guidelines: [How We Use JIRA in ARO HCP](https://docs.google.com/document/d/1jLwHt00p5EyW4hYIUlDleQGh0K96UfZrmcp-BJ3BmaM)
+
 ### Default field values
 
 Always set these fields on every new Jira issue. Never leave them unset.
@@ -189,7 +209,11 @@ Common groups: `"Red Hat Employee"`, `"Red Hat Partner"`.
 
 ### Labels
 
-Never add `labels` to Jira issues. The team stopped using them. Omit the field entirely when creating or updating issues.
+Only two labels are allowed per ARO HCP Jira guidelines:
+- `no-qe` — QE assumes testing is needed unless this label is present
+- `good-first-issue` — marks items suitable for onboarding
+
+Omit the field entirely for all other cases. Never add custom or ad-hoc labels.
 
 ### Transition IDs
 
