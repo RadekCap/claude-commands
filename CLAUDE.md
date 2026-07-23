@@ -155,6 +155,13 @@ See full guidelines: [How We Use JIRA in ARO HCP](https://docs.google.com/docume
 - What the work is and why it matters — written for someone who doesn't know you personally
 - Link any related PRs or commits in a comment once work starts
 
+### Progress updates (mandatory when work moves)
+
+When a PR is merged or a significant commit lands related to a Jira ticket:
+- Add a comment to the ticket with: PR link + one sentence on what changed
+- Do not rely on the PR description alone — Jira and GitHub are separate audiences
+- Add a short status comment when something meaningful moves (blocked, unblocked, scope change)
+
 ### Parent Epic (mandatory for Stories/Tasks/Bugs)
 
 Always set the Epic Link field when creating a Story, Task, or Bug.
