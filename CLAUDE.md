@@ -125,6 +125,14 @@ Rules:
 
 These rules apply when creating **any** Jira issue, regardless of project, source, or path used to trigger creation.
 
+### Issue type
+
+Use the correct type — never default to Story or Task:
+- **Bug** — actual defects, CVEs, unexpected behavior in production code
+- **Story** — planned deliverables with clear acceptance criteria
+- **Task** — operational/reactive work: CI failures, security scan workflow failures, housekeeping, post-meeting actions
+- **Spike** — time-boxed investigation or research
+
 ### Description (mandatory)
 
 - **Always include a description.** Never create a Jira issue with an empty description field.
