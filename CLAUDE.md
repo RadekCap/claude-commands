@@ -128,9 +128,9 @@ These rules apply when creating **any** Jira issue, regardless of project, sourc
 ### Issue type
 
 Use the correct type — never default to Story or Task:
-- **Bug** — actual defects, CVEs, unexpected behavior in production code
+- **Bug** — actual defects in your own code, unexpected behavior in production
 - **Story** — planned deliverables with clear acceptance criteria
-- **Task** — operational/reactive work: CI failures, security scan workflow failures, housekeeping, post-meeting actions
+- **Task** — operational/reactive work: CI failures, security scan failures, CVE dependency updates, housekeeping, post-meeting actions
 - **Spike** — time-boxed investigation or research
 
 ### Description (mandatory)
